@@ -1,6 +1,6 @@
 from torchvision.transforms import transforms
 
-from data.TrainingDataset import TrainingDataset
+from data.TrainingDataset import TrainingDataset, PatchSquare
 from data.ValidationDataset import ValidationDataset
 from data.utils import get_transform
 from utils.htr_logging import get_logger
@@ -13,12 +13,18 @@ def make_train_dataset(config: dict):
     train_gt_data_path = config['train_gt_data_path']
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
+    use_patch_square = config['use_patch_square'] if 'use_patch_square' in config else False
 
     logger.info(f"Train path: \"{train_data_path}\" - Train ground truth path: \"{train_gt_data_path}\"")
     logger.info(f"Transform Variant: {transform_variant} - Training Patch Size: {patch_size}")
 
     transform = get_transform(transform_variant=transform_variant, output_size=patch_size)
-    train_dataset = TrainingDataset(train_data_path, train_gt_data_path, transform=transform)
+
+    if use_patch_square:
+        train_dataset = PatchSquare(path=train_data_path, transform=transform)
+    else:
+        train_dataset = TrainingDataset(train_data_path, train_gt_data_path, transform=transform)
+
     logger.info(f"Training set has {len(train_dataset)} instances")
 
     return train_dataset

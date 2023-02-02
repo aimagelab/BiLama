@@ -207,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('-en', '--experiment_name', metavar='<name>', type=str,
                         help=f"The experiment name which will use on WandB", default="debug")
     parser.add_argument('-cfg', '--configuration', metavar='<name>', type=str,
-                        help=f"The configuration name will use on WandB", default="debug")
+                        help=f"The configuration name will use on WandB", default="debug_patch_square")
     parser.add_argument('-wdb', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
 

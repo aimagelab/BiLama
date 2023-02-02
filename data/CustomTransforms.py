@@ -13,6 +13,14 @@ class ToTensor(transforms.ToTensor):
         return {'image': image, 'gt': gt}
 
 
+class ThresholdMask:
+
+    def __call__(self, sample):
+        image, gt = sample['image'], sample['gt']
+        gt = (gt > 0.5).int()
+        return {'image': image, 'gt': gt}
+
+
 class ColorJitter(transforms.ColorJitter):
 
     def __call__(self, sample):

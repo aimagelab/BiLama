@@ -1,11 +1,54 @@
+import json
 import os
 import random
 
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
+from pathlib import Path
 
 from data.utils import get_path
+
+
+class PatchSquare(Dataset):
+
+    def __init__(self, path: str, transform=None):
+
+        super(PatchSquare, self).__init__()
+        self.path = Path(path)
+        self.transform = transform
+
+        self.full_images = [list(sub_folder.rglob('*.jpg')) for sub_folder in self.path.rglob('/full/')]
+        # self.full_images = list(self.path.rglob('*_full.jpg'))
+        self.full_images = sum(self.full_images, [])
+
+    def __len__(self):
+        return len(self.full_images)
+
+    def __getitem__(self, index, merge_image=False):
+        full_image_path = self.full_images[index]
+        full_image_idx = full_image_path.stem
+        full_image = Image.open(full_image_path).convert("RGB")
+        background_image = Image.open(self.path / 'background' / f'{full_image_idx}_bg.jpg').convert("RGB")
+        mask_image = Image.open(self.path / 'mask' / f'{full_image_idx}_mask.jpg').convert("L")
+
+        with open(self.path / 'metadata' / f'{full_image_idx}_metadata.json', 'r') as f:
+            metadata = json.load(f)
+
+        if self.transform:
+            transform = self.transform({'image': full_image, 'gt': mask_image})
+            full_image = transform['image']
+            mask_image = transform['gt']
+
+        # Merge two images
+        if merge_image:
+            random_index = random.randint(0, len(self.full_images) - 1)
+            random_sample, random_gt_sample = self.__getitem__(index=random_index, merge_image=False)
+
+            full_image = np.minimum(full_image, random_sample)
+            mask_image = np.minimum(mask_image, random_gt_sample)
+
+        return full_image, mask_image
 
 
 class TrainingDataset(Dataset):
