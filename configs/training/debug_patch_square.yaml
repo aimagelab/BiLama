@@ -3,10 +3,10 @@ output_channels: 1
 
 kind_loss: "custom_mse"
 kind_optimizer: "Adam"
-train_transform_variant: "default"
+train_transform_variant: "threshold_mask"
 
 num_epochs: 150
-path_checkpoint: 'weights/'
+path_checkpoint: '/mnt/beegfs/work/FoMo_AIISDH/scascianelli/2023_ICCV_bilama/checkpoints/'
 learning_rate: 1.5e-4
 seed: 987
 threshold: 0.5
@@ -29,11 +29,14 @@ down_sample_conv_kwargs:
 resnet_conv_kwargs:
   ratio_gin: 0.75
   ratio_gout: 0.75
+n_blocks: 9
+toggle_ffc: True  # if you want to use the ffc inside the network or convolutions
+attention: None  # if you want to use attention or not
 
 
 # Train configuration
 use_patch_square: True
-train_data_path: "/mnt/beegfs/work/FoMo_AIISDH/datasets/patch_square"
+train_data_path: "patch_square"
 train_gt_data_path: None
 train_batch_size: 8
 train_patch_size: 256

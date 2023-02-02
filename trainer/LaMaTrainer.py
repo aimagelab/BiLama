@@ -44,7 +44,7 @@ class LaMaTrainingModule:
         self.model = LaMa(input_nc=config['input_channels'], output_nc=config['output_channels'],
                           init_conv_kwargs=config['init_conv_kwargs'],
                           downsample_conv_kwargs=config['down_sample_conv_kwargs'],
-                          resnet_conv_kwargs=config['resnet_conv_kwargs'])
+                          resnet_conv_kwargs=config['resnet_conv_kwargs'], n_blocks=config['n_blocks'])
 
         # Training
         self.epoch = 0

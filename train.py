@@ -2,6 +2,7 @@ import argparse
 import random
 import sys
 import time
+import uuid
 from datetime import timedelta
 
 import numpy as np
@@ -204,14 +205,15 @@ def random_seed(seed: int):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-en', '--experiment_name', metavar='<name>', type=str,
+    parser.add_argument('-e', '--experiment_name', metavar='<name>', type=str,
                         help=f"The experiment name which will use on WandB", default="debug")
-    parser.add_argument('-cfg', '--configuration', metavar='<name>', type=str,
+    parser.add_argument('-c', '--configuration', metavar='<name>', type=str,
                         help=f"The configuration name will use on WandB", default="debug_patch_square")
-    parser.add_argument('-wdb', '--use_wandb', type=bool, default=not DEBUG)
+    parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
 
     args = parser.parse_args()
+
     config_filename = args.configuration
 
     logger.info("Start process ...")
@@ -220,7 +222,17 @@ if __name__ == '__main__':
 
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
-        file.close()
+
+    if args.experiment_name is None:
+        exp_name = [
+            'FFC' if train_config['toggle_ffc'] else 'CONV',
+            train_config['n_blocks'] + 'RB',
+            train_config['train_patch_size'] + 'PS',
+        ]
+        if train_config['attention']:
+            exp_name.append(train_config['attention'] + 'ATT')
+        exp_name.append(str(uuid.uuid4())[:4])
+        args.experiment_name = '_'.join(exp_name)
 
     random_seed(train_config['seed'])
 

@@ -18,9 +18,7 @@ class PatchSquare(Dataset):
         self.path = Path(path)
         self.transform = transform
 
-        self.full_images = [list(sub_folder.rglob('*.jpg')) for sub_folder in self.path.rglob('/full/')]
-        # self.full_images = list(self.path.rglob('*_full.jpg'))
-        self.full_images = sum(self.full_images, [])
+        self.full_images = list(self.path.rglob('*/full/*'))
 
     def __len__(self):
         return len(self.full_images)
@@ -28,11 +26,12 @@ class PatchSquare(Dataset):
     def __getitem__(self, index, merge_image=False):
         full_image_path = self.full_images[index]
         full_image_idx = full_image_path.stem
+        folder_idx = full_image_path.parent.parent.stem
         full_image = Image.open(full_image_path).convert("RGB")
-        background_image = Image.open(self.path / 'background' / f'{full_image_idx}_bg.jpg').convert("RGB")
-        mask_image = Image.open(self.path / 'mask' / f'{full_image_idx}_mask.jpg').convert("L")
+        background_image = Image.open(self.path / folder_idx / 'bg' / f'{full_image_idx}_bg.jpg').convert("RGB")
+        mask_image = Image.open(self.path / folder_idx / 'mask' / f'{full_image_idx}_mask.jpg').convert("L")
 
-        with open(self.path / 'metadata' / f'{full_image_idx}_metadata.json', 'r') as f:
+        with open(self.path / folder_idx / 'metadata' / f'{full_image_idx}_metadata.json', 'r') as f:
             metadata = json.load(f)
 
         if self.transform:

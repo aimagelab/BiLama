@@ -11,3 +11,4 @@ remote_interpreter
 fast_train_lama.sh
 slow_train_lama.sh
 test_train_lama.sh
+/patch_square/

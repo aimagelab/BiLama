@@ -276,7 +276,7 @@ class FFCResnetBlock(nn.Module):
         x_l, x_g = self.conv1((x_l, x_g))
         x_l, x_g = self.conv2((x_l, x_g))
 
-        x_l, x_g = id_l + x_l, id_g + x_g
+        x_l, x_g = id_l + x_l, id_g + x_g  # TODO test that this is correct
         out = x_l, x_g
         if self.inline:
             out = torch.cat(out, dim=1)
