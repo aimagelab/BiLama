@@ -30,14 +30,16 @@ resnet_conv_kwargs:
   ratio_gin: 0.75
   ratio_gout: 0.75
 n_blocks: 9
-toggle_ffc: True  # if you want to use the ffc inside the network or convolutions
+toggle_ffc: False  # if you want to use the ffc inside the network or convolutions
 attention: None  # if you want to use attention or not
 
 
 # Train configuration
 use_patch_square: True
-train_data_path: "/mnt/beegfs/work/FoMo_AIISDH/datasets/patch_square"
-train_gt_data_path: None
+train_data_path: [
+  "/mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO16",
+  "/mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO17"
+]
 train_batch_size: 8
 train_patch_size: 256
 train_log_every: 100
@@ -51,7 +53,6 @@ train_kwargs:
 
 # Valid configuration
 valid_data_path: "patches/valid"
-valid_gt_data_path: "patches/valid_gt"
 valid_batch_size: 1
 valid_patch_size: 256
 valid_stride: 256

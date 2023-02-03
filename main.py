@@ -6,6 +6,7 @@ from data.process_image import PatchImage, configure_args
 
 def create_patches(path_configuration: str):
     args = configure_args(path_configuration)
+
     root_original = args.path_original
     root_ground_truth = args.path_ground_truth
     destination = args.path_destination

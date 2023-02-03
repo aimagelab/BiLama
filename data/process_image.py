@@ -7,25 +7,20 @@ import cv2
 import numpy as np
 import yaml
 from tqdm import tqdm
+from pathlib import Path
 
 
 def check_or_create_folder(name: str):
-    if not os.path.exists(name):
-        os.makedirs(name)
-    else:
-        os.system('rm -rf ' + name + '*')
+    pass
 
 
 class PatchImage:
 
     def __init__(self, patch_size: int, overlap_size: int, patch_size_valid: int, destination_root: str):
         logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-        self.train_folder = destination_root + "/train/"
-        self.train_gt_folder = destination_root + "/train_gt/"
-        self.valid_folder = destination_root + "/valid/"
-        self.valid_gt_folder = destination_root + "/valid_gt/"
-        self.test_folder = destination_root + "/test/"
-        self.test_gt_folder = destination_root + "/test_gt/"
+        destination_root = Path(destination_root)
+        self.train_folder = destination_root / f'imgs_{patch_size}/'
+        self.train_gt_folder = destination_root / f'gt_imgs_{patch_size}/'
 
         self.patch_size = patch_size
         self.overlap_size = overlap_size
@@ -39,35 +34,20 @@ class PatchImage:
         self._create_folders()
 
     def _create_folders(self):
-        check_or_create_folder(self.train_folder)
-        check_or_create_folder(self.train_gt_folder)
-        check_or_create_folder(self.valid_folder)
-        check_or_create_folder(self.valid_gt_folder)
-        check_or_create_folder(self.test_folder)
-        check_or_create_folder(self.test_gt_folder)
+        self.train_folder.mkdir(parents=True, exist_ok=True)
+        self.train_gt_folder.mkdir(parents=True, exist_ok=True)
         logging.info("Configuration folders ...")
 
     def create_patches(self, root_original: str, root_ground_truth: str, test_dataset, validation_dataset):
         logging.info("Start process ...")
-        all_datasets = os.listdir(root_original)
-        pbar = tqdm(all_datasets)
+        root_original = Path(root_original)
+        gt = root_original / 'gt_imgs'
+        imgs = root_original / 'imgs'
 
-        try:
-            for d_set in pbar:
-                for im in os.listdir(root_original + d_set):
-                    pbar.set_description(f"Processing {im} of {d_set}")
-                    self.image_name = im
-                    or_img = cv2.imread(root_original + d_set + '/' + im)
-                    gt_img = cv2.imread(root_ground_truth + d_set + '/' + im)
-                    if d_set not in [validation_dataset, test_dataset]:
-                        self._split_train_images(or_img, gt_img, type="train")
-                    if d_set == test_dataset:
-                        self._split_train_images(or_img, gt_img, type="test")
-                    if d_set == validation_dataset:
-                        self._split_train_images(or_img, gt_img, type="valid")
-            logging.info(f"Stored {self.number_image} training patches")
-        except KeyboardInterrupt:
-            logging.error("Keyboard Interrupt: stop running!")
+        for img in imgs.rglob('*.png'):
+            or_img = cv2.imread(str(img))
+            gt_img = cv2.imread(str(gt / img.name))
+            self._split_train_images(or_img, gt_img, type="train")
 
     def _split_train_images(self, or_img: np.ndarray, gt_img: np.ndarray, type: str):
         runtime_size = self.overlap_size if type == "train" else self.patch_size_valid
@@ -108,15 +88,10 @@ class PatchImage:
                                                                                 :]
 
                 if type == "train":
-                    cv2.imwrite(self.train_folder + str(self.number_image) + '.png', dg_patch)
-                    cv2.imwrite(self.train_gt_folder + str(self.number_image) + '.png', gt_patch)
+                    cv2.imwrite(str(self.train_folder / (str(self.number_image) + '.png')), dg_patch)
+                    cv2.imwrite(str(self.train_gt_folder / (str(self.number_image) + '.png')), gt_patch)
                     self.number_image += 1
-                elif type == "test":
-                    cv2.imwrite(self._create_name(self.test_folder, i, j), dg_patch)
-                    cv2.imwrite(self._create_name(self.test_gt_folder, i, j), gt_patch)
-                elif type == "valid":
-                    cv2.imwrite(self._create_name(self.valid_folder, i, j), dg_patch)
-                    cv2.imwrite(self._create_name(self.valid_gt_folder, i, j), gt_patch)
+                    print(self.number_image)
 
     def _create_name(self, folder: str, i: int, j: int):
         return folder + self.image_name.split('.')[0] + '_' + str(i) + '_' + str(j) + '.png'

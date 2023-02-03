@@ -52,10 +52,9 @@ class PatchSquare(Dataset):
 
 class TrainingDataset(Dataset):
 
-    def __init__(self, root_dg_dir: str, root_gt_dir: str, split_size=256, transform=None):
-        assert len(os.listdir(root_dg_dir)) == len(os.listdir(root_gt_dir))
-
+    def __init__(self, data_paths, split_size=256, transform=None):
         super(TrainingDataset, self).__init__()
+        imgs = [for path in data_paths for path in Path(path).rglob('*/full/*')]
         self.root_dg_dir = root_dg_dir
         self.root_gt_dir = root_gt_dir
         self.split_size = split_size

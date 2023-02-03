@@ -1,7 +1,7 @@
 paths:
-  train: "dataset/original/"
-  ground_truth: "dataset/ground_truth/"
-  destination: "patches/"
+  train: "D:\\DIBCO18"
+  ground_truth: "D:\\DIBCO18"
+  destination: "D:\\DIBCO18"
 
 validation_dataset: "2016"
 testing_dataset: "2018"
