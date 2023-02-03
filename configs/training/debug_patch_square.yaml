@@ -37,8 +37,8 @@ attention: None  # if you want to use attention or not
 # Train configuration
 use_patch_square: True
 train_data_path: [
-  "/mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO16",
-  "/mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO17"
+  "D:\\DIBCO16",
+  "D:\\DIBCO17"
 ]
 train_batch_size: 8
 train_patch_size: 256
@@ -52,7 +52,9 @@ train_kwargs:
 
 
 # Valid configuration
-valid_data_path: "patches/valid"
+valid_data_path: [
+  "D:\\DIBCO18"
+]
 valid_batch_size: 1
 valid_patch_size: 256
 valid_stride: 256
