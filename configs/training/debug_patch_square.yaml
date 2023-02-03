@@ -36,7 +36,7 @@ attention: None  # if you want to use attention or not
 
 # Train configuration
 use_patch_square: True
-train_data_path: "patch_square"
+train_data_path: "/mnt/beegfs/work/FoMo_AIISDH/datasets/patch_square"
 train_gt_data_path: None
 train_batch_size: 8
 train_patch_size: 256
