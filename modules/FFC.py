@@ -162,7 +162,7 @@ class FFC(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size,
                  ratio_gin, ratio_gout, stride=1, padding=0,
                  dilation=1, groups=1, bias=False, enable_lfu=True,
-                 padding_type='reflect', gated=False, **spectral_kwargs):
+                 padding_type='reflect', gated=False, spectral=True, **spectral_kwargs):
         super(FFC, self).__init__()
 
         assert stride == 1 or stride == 2, "Stride should be 1 or 2."
@@ -179,18 +179,24 @@ class FFC(nn.Module):
         self.ratio_gout = ratio_gout
         self.global_in_num = in_cg
 
+        conv2d_kwargs = dict(
+            kernel_size=kernel_size, stride=stride, padding=padding,
+            dilation=dilation, groups=groups, bias=bias, padding_mode=padding_type
+        )
+
         module = nn.Identity if in_cl == 0 or out_cl == 0 else nn.Conv2d
-        self.convl2l = module(in_cl, out_cl, kernel_size,
-                              stride, padding, dilation, groups, bias, padding_mode=padding_type)
+        self.convl2l = module(in_cl, out_cl, **conv2d_kwargs)
         module = nn.Identity if in_cl == 0 or out_cg == 0 else nn.Conv2d
-        self.convl2g = module(in_cl, out_cg, kernel_size,
-                              stride, padding, dilation, groups, bias, padding_mode=padding_type)
+        self.convl2g = module(in_cl, out_cg, **conv2d_kwargs)
         module = nn.Identity if in_cg == 0 or out_cl == 0 else nn.Conv2d
-        self.convg2l = module(in_cg, out_cl, kernel_size,
-                              stride, padding, dilation, groups, bias, padding_mode=padding_type)
-        module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
-        self.convg2g = module(
-            in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu, **spectral_kwargs)
+        self.convg2l = module(in_cg, out_cl, **conv2d_kwargs)
+
+        if spectral:
+            module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
+            self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu, **spectral_kwargs)
+        else:
+            module = nn.Identity if in_cg == 0 or out_cg == 0 else nn.Conv2d
+            self.convg2g = module(in_cg, out_cg, **conv2d_kwargs)
 
         self.gated = gated
         module = nn.Identity if in_cg == 0 or out_cl == 0 or not self.gated else nn.Conv2d
