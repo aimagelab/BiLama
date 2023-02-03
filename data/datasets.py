@@ -28,13 +28,12 @@ def make_train_dataset(config: dict):
 
 def make_valid_dataset(config: dict):
     valid_data_path = config['valid_data_path']
-    valid_gt_data_path = config['valid_gt_data_path']
     patch_size = config['valid_patch_size']
     stride = config['valid_stride']
 
     transform = transforms.Compose([transforms.ToTensor()])
 
-    valid_dataset = ValidationDataset(root_dg_dir=valid_data_path, root_gt_dir=valid_gt_data_path,
-                                      patch_size=patch_size, stride=stride, transform=transform)
+    valid_dataset = ValidationDataset(valid_data_path, patch_size=patch_size, stride=stride, transform=transform)
+
     logger.info(f"Validation set has {len(valid_dataset)} instances")
     return valid_dataset

@@ -52,25 +52,20 @@ class PatchSquare(Dataset):
 
 class TrainingDataset(Dataset):
 
-    def __init__(self, data_paths, split_size=256, transform=None):
+    def __init__(self, data_paths, split_size=256, patch_size=384, transform=None):
         super(TrainingDataset, self).__init__()
-        imgs = [for path in data_paths for path in Path(path).rglob('*/full/*')]
-        self.root_dg_dir = root_dg_dir
-        self.root_gt_dir = root_gt_dir
+        self.imgs = [path for data_path in data_paths for path in Path(data_path).rglob(f'imgs_{patch_size}/*')]
         self.split_size = split_size
         self.transform = transform
 
-        self.path_images = os.listdir(self.root_dg_dir)
-
     def __len__(self):
-        return len(self.path_images)
+        return len(self.imgs)
 
     def __getitem__(self, index, merge_image=True):
-        path_image_deg = get_path(self.root_dg_dir, self.path_images, index)
-        path_image_gtr = get_path(self.root_gt_dir, self.path_images, index)
-
-        sample = Image.open(path_image_deg).convert("RGB")
-        gt_sample = Image.open(path_image_gtr).convert("L")
+        img_path = self.imgs[index]
+        gt_img_path = img_path.parent.parent / ('gt_' + img_path.parent.name) / img_path.name
+        sample = Image.open(img_path).convert("RGB")
+        gt_sample = Image.open(gt_img_path).convert("L")
 
         if self.transform:
             transform = self.transform({'image': sample, 'gt': gt_sample})
@@ -79,7 +74,7 @@ class TrainingDataset(Dataset):
 
         # Merge two images
         if merge_image:
-            random_index = random.randint(0, len(self.path_images) - 1)
+            random_index = random.randint(0, len(self.imgs) - 1)
             random_sample, random_gt_sample = self.__getitem__(index=random_index, merge_image=False)
 
             sample = np.minimum(sample, random_sample)

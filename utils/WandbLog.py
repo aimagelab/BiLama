@@ -21,7 +21,7 @@ def rewrite_logs(dictionary: dict):
 
 class WandbLog(object):
 
-    def __init__(self, experiment_name: str, project="test-project", entity="fomo_thesis"):
+    def __init__(self, experiment_name: str, project="BiLaMa", entity="fomo_aiisdh"):
         self._wandb = wandb
         self._initialized = False
         self._project = project

@@ -1,34 +1,29 @@
 import os
-
+from pathlib import Path
 import torchvision.transforms.functional as functional
 from PIL import Image
 from torch.utils.data import Dataset
 
 from data.utils import get_path
 
-
 class ValidationDataset(Dataset):
 
-    def __init__(self, root_dg_dir: str, root_gt_dir: str, patch_size=256, stride=256, transform=None):
-        assert len(os.listdir(root_dg_dir)) == len(os.listdir(root_gt_dir))
-
+    def __init__(self, data_paths, patch_size=256, stride=256, transform=None):
         super(ValidationDataset, self).__init__()
-        self.root_dg_dir = root_dg_dir
-        self.root_gt_dir = root_gt_dir
+        self.imgs = [path for data_path in data_paths for path in Path(data_path).rglob(f'imgs/*')]
         self.patch_size = patch_size
         self.stride = stride
-        self.path_images = os.listdir(self.root_dg_dir)
         self.transform = transform
 
     def __len__(self):
-        return len(self.path_images)
+        return len(self.imgs)
 
     def __getitem__(self, index):
-        path_image_deg = get_path(self.root_dg_dir, self.path_images, index)
-        path_image_gtr = get_path(self.root_gt_dir, self.path_images, index)
+        img_path = self.imgs[index]
+        gt_img_path = img_path.parent.parent / 'gt_imgs' / img_path.name
 
-        sample = Image.open(path_image_deg).convert("RGB")
-        gt_sample = Image.open(path_image_gtr).convert("L")
+        sample = Image.open(img_path).convert("RGB")
+        gt_sample = Image.open(gt_img_path).convert("L")
 
         # Create patches
         padding_bottom = ((sample.height // self.patch_size) + 1) * self.patch_size - sample.height
@@ -46,7 +41,7 @@ class ValidationDataset(Dataset):
             gt_sample = self.transform(gt_sample)
 
         item = {
-            'image_name': self.path_images[index],
+            'image_name': str(self.imgs[index]),
             'sample': sample,
             'num_rows': num_rows,
             'samples_patches': patches,
