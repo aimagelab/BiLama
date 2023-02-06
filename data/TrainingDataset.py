@@ -80,4 +80,5 @@ class TrainingDataset(Dataset):
             sample = np.minimum(sample, random_sample)
             gt_sample = np.minimum(gt_sample, random_gt_sample)
 
+        gt_sample = gt_sample.float()
         return sample, gt_sample

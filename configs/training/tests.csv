@@ -1,0 +1,9 @@
+n_blocks,operation
+12,conv
+15,conv
+9,conv
+3,conv
+6,conv
+3,ffc
+12,ffc
+6,ffc

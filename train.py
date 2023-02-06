@@ -3,6 +3,8 @@ import random
 import sys
 import time
 import uuid
+import traceback
+from pathlib import Path
 from datetime import timedelta
 
 import numpy as np
@@ -26,7 +28,8 @@ logger.info(f"Using {device} device")
 def train(config_args, config):
     wandb_log = None
     if config_args.use_wandb:  # Configure WandB
-        wandb_log = WandbLog(experiment_name=config_args.experiment_name)
+        tags = [Path(path).name for path in config_args.train_data_path]
+        wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags)
         params = {
             "Architecture": "lama",
 
@@ -159,10 +162,10 @@ def train(config_args, config):
                                                  filename=config_args.experiment_name)
 
                         # Save images
-                        names = images.keys()
-                        predicted_images = [item[1] for item in list(images.values())]
-                        store_images(parent_directory='results/training', directory=config_args.experiment_name,
-                                     names=names, images=predicted_images)
+                        # names = images.keys()
+                        # predicted_images = [item[1] for item in list(images.values())]
+                        # store_images(parent_directory='results/training', directory=config_args.experiment_name,
+                        #              names=names, images=predicted_images)
                     else:
                         patience -= 1
 
@@ -192,10 +195,14 @@ def train(config_args, config):
     except KeyboardInterrupt:
         logger.warning("Training interrupted by user")
     except Exception as e:
+        traceback.print_exc()
         logger.error(f"Training failed due to {e}")
+    finally:
+        logger.info("Training finished")
+        exit()
 
 
-def random_seed(seed: int):
+def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -206,11 +213,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-e', '--experiment_name', metavar='<name>', type=str,
-                        help=f"The experiment name which will use on WandB", default="debug")
+                        help=f"The experiment name which will use on WandB")
     parser.add_argument('-c', '--configuration', metavar='<name>', type=str,
                         help=f"The configuration name will use on WandB", default="debug_patch_square")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
+    parser.add_argument('--attention', type=str)
+    parser.add_argument('--n_blocks', type=int, default=9)
+    parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
+    parser.add_argument('--seed', type=int, default=742)
+    parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
+    parser.add_argument('--valid_data_path', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
 
@@ -225,16 +238,23 @@ if __name__ == '__main__':
 
     if args.experiment_name is None:
         exp_name = [
-            'FFC' if train_config['toggle_ffc'] else 'CONV',
-            train_config['n_blocks'] + 'RB',
-            train_config['train_patch_size'] + 'PS',
+            args.operation.upper(),
+            str(args.n_blocks) + 'RB',
+            str(train_config['train_patch_size']) + 'PS',
         ]
-        if train_config['attention']:
-            exp_name.append(train_config['attention'] + 'ATT')
+        if args.attention:
+            exp_name.append(args.attention + 'ATT')
         exp_name.append(str(uuid.uuid4())[:4])
         args.experiment_name = '_'.join(exp_name)
 
-    random_seed(train_config['seed'])
+    train_config['experiment_name'] = args.experiment_name
+    train_config['use_convolutions'] = args.operation == 'conv'
+    train_config['n_blocks'] = args.n_blocks
+    train_config['attention'] = args.attention
+    train_config['train_data_path'] = args.train_data_path
+    train_config['valid_data_path'] = args.valid_data_path
+
+    set_seed(args.seed)
 
     train(args, train_config)
     sys.exit()

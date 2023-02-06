@@ -162,7 +162,7 @@ class FFC(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size,
                  ratio_gin, ratio_gout, stride=1, padding=0,
                  dilation=1, groups=1, bias=False, enable_lfu=True,
-                 padding_type='reflect', gated=False, spectral=True, **spectral_kwargs):
+                 padding_type='reflect', gated=False, use_convolutions=False, **spectral_kwargs):
         super(FFC, self).__init__()
 
         assert stride == 1 or stride == 2, "Stride should be 1 or 2."
@@ -191,12 +191,12 @@ class FFC(nn.Module):
         module = nn.Identity if in_cg == 0 or out_cl == 0 else nn.Conv2d
         self.convg2l = module(in_cg, out_cl, **conv2d_kwargs)
 
-        if spectral:
-            module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
-            self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu, **spectral_kwargs)
-        else:
+        if use_convolutions:
             module = nn.Identity if in_cg == 0 or out_cg == 0 else nn.Conv2d
             self.convg2g = module(in_cg, out_cg, **conv2d_kwargs)
+        else:
+            module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
+            self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu, **spectral_kwargs)
 
         self.gated = gated
         module = nn.Identity if in_cg == 0 or out_cl == 0 or not self.gated else nn.Conv2d
@@ -231,12 +231,12 @@ class FFC_BN_ACT(nn.Module):
                  kernel_size, ratio_gin, ratio_gout,
                  stride=1, padding=0, dilation=1, groups=1, bias=False,
                  norm_layer=nn.BatchNorm2d, activation_layer=nn.Identity,
-                 padding_type='reflect', spectral=True,
+                 padding_type='reflect', use_convolutions=False,
                  enable_lfu=True, **kwargs):
         super(FFC_BN_ACT, self).__init__()
         self.ffc = FFC(in_channels, out_channels, kernel_size,
                        ratio_gin, ratio_gout, stride, padding, dilation,
-                       groups, bias, enable_lfu, padding_type=padding_type, spectral=spectral, **kwargs)
+                       groups, bias, enable_lfu, padding_type=padding_type, use_convolutions=use_convolutions, **kwargs)
         lnorm = nn.Identity if ratio_gout == 1 else norm_layer
         gnorm = nn.Identity if ratio_gout == 0 else norm_layer
         global_channels = int(out_channels * ratio_gout)
@@ -257,13 +257,13 @@ class FFC_BN_ACT(nn.Module):
 
 class FFCResnetBlock(nn.Module):
     def __init__(self, dim, padding_type, norm_layer, activation_layer=nn.ReLU, dilation=1,
-                 spatial_transform_kwargs=None, inline=False, spectral=True, **conv_kwargs):
+                 spatial_transform_kwargs=None, inline=False, use_convolutions=False, **conv_kwargs):
         super().__init__()
         self.conv1 = FFC_BN_ACT(dim, dim, kernel_size=3, padding=dilation, dilation=dilation, norm_layer=norm_layer,
-                                activation_layer=activation_layer, padding_type=padding_type, spectral=spectral,
+                                activation_layer=activation_layer, padding_type=padding_type, use_convolutions=use_convolutions,
                                 **conv_kwargs)
         self.conv2 = FFC_BN_ACT(dim, dim, kernel_size=3, padding=dilation, dilation=dilation, norm_layer=norm_layer,
-                                activation_layer=activation_layer, spectral=spectral,
+                                activation_layer=activation_layer, use_convolutions=use_convolutions,
                                 padding_type=padding_type,
                                 **conv_kwargs)
         if spatial_transform_kwargs is not None:
@@ -305,13 +305,13 @@ class LaMa(nn.Module):
                  up_norm_layer=nn.BatchNorm2d, up_activation=nn.ReLU(True),
                  init_conv_kwargs={}, downsample_conv_kwargs={}, resnet_conv_kwargs={},
                  spatial_transform_layers=None, spatial_transform_kwargs={},
-                 add_out_act=True, max_features=1024, out_ffc=False, out_ffc_kwargs={}, spectral=True):
+                 add_out_act=True, max_features=1024, out_ffc=False, out_ffc_kwargs={}, use_convolutions=True):
         assert (n_blocks >= 0)
         super().__init__()
 
         model = [nn.ReflectionPad2d(3),
                  FFC_BN_ACT(input_nc, ngf, kernel_size=7, padding=0, norm_layer=norm_layer,
-                            activation_layer=activation_layer, spectral=spectral, **init_conv_kwargs)]
+                            activation_layer=activation_layer, use_convolutions=use_convolutions, **init_conv_kwargs)]
 
         # Down-sample
         for i in range(n_downsampling):
@@ -326,7 +326,7 @@ class LaMa(nn.Module):
                                  kernel_size=3, stride=2, padding=1,
                                  norm_layer=norm_layer,
                                  activation_layer=activation_layer,
-                                 spectral=spectral,
+                                 use_convolutions=use_convolutions,
                                  **cur_conv_kwargs)]
 
         mult = 2 ** n_downsampling
@@ -336,7 +336,7 @@ class LaMa(nn.Module):
         for i in range(n_blocks):
             cur_resblock = FFCResnetBlock(feats_num_bottleneck, padding_type=padding_type,
                                           activation_layer=activation_layer,
-                                          norm_layer=norm_layer, **resnet_conv_kwargs)
+                                          norm_layer=norm_layer, use_convolutions=use_convolutions, **resnet_conv_kwargs)
             if spatial_transform_layers is not None and i in spatial_transform_layers:
                 cur_resblock = LearnableSpatialTransformWrapper(cur_resblock, **spatial_transform_kwargs)
             model += [cur_resblock]
@@ -354,7 +354,7 @@ class LaMa(nn.Module):
 
         if out_ffc:
             model += [FFCResnetBlock(ngf, padding_type=padding_type, activation_layer=activation_layer,
-                                     norm_layer=norm_layer, inline=True, **out_ffc_kwargs)]
+                                     norm_layer=norm_layer, inline=True, use_convolutions=use_convolutions, **out_ffc_kwargs)]
 
         model += [nn.ReflectionPad2d(3),
                   nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]

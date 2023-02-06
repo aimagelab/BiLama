@@ -12,7 +12,6 @@ def make_train_dataset(config: dict):
     train_data_path = config['train_data_path']
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
-    use_patch_square = config['use_patch_square'] if 'use_patch_square' in config else False
 
     logger.info(f"Train path: \"{train_data_path}\"")
     logger.info(f"Transform Variant: {transform_variant} - Training Patch Size: {patch_size}")

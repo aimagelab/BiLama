@@ -10,8 +10,10 @@ def make_criterion(kind: str):
         criterion = torch.nn.NLLLoss()
     elif kind == 'binary_cross_entropy':
         criterion = torch.nn.BCEWithLogitsLoss()
-    else:
+    elif kind == 'custom_mse':
         criterion = LMSELoss()
+    else:
+        raise ValueError(f"Unknown kind of criterion: {kind}")
     return criterion
 
 
