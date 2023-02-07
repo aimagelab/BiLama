@@ -14,6 +14,10 @@ class ValidationDataset(Dataset):
     def __init__(self, data_path, patch_size=256, stride=256, transform=None):
         super(ValidationDataset, self).__init__()
         self.imgs = list(Path(data_path).rglob(f'imgs/*'))
+        self.gt_imgs = [img_path.parent.parent / 'gt_imgs' / img_path.name for img_path in self.imgs]
+
+        self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
+        self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
         self.patch_size = patch_size
         self.stride = stride
         self.transform = transform
@@ -22,11 +26,8 @@ class ValidationDataset(Dataset):
         return len(self.imgs)
 
     def __getitem__(self, index):
-        img_path = self.imgs[index]
-        gt_img_path = img_path.parent.parent / 'gt_imgs' / img_path.name
-
-        sample = Image.open(img_path).convert("RGB")
-        gt_sample = Image.open(gt_img_path).convert("L")
+        sample = self.imgs[index]
+        gt_sample = self.gt_imgs[index]
 
         # Create patches
         padding_bottom = ((sample.height // self.patch_size) + 1) * self.patch_size - sample.height
