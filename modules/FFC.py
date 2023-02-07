@@ -159,14 +159,14 @@ class SpectralTransform(nn.Module):
 
 
 class CrossAttentionBlock(nn.Module):  # 60K params with 128,128,128
-    def __init__(self, q_in_channels, kv_in_channels, channels, num_heads=1):
+    def __init__(self, q_in_channels, kv_in_channels, channels, out_channels, num_heads=1):
         super(CrossAttentionBlock, self).__init__()
         assert channels % num_heads == 0, "channels must be divisible by num_heads"
         self.num_heads = num_heads
         self.q = nn.Conv1d(q_in_channels, channels, kernel_size=1)
         self.k = nn.Conv1d(kv_in_channels, channels, kernel_size=1)
         self.v = nn.Conv1d(kv_in_channels, channels, kernel_size=1)
-        self.proj_out = nn.Conv1d(channels, channels, kernel_size=1)
+        self.proj_out = nn.Conv1d(channels, out_channels, kernel_size=1)
         # todo norm???
 
     def forward(self, query, key, value):
@@ -251,11 +251,13 @@ class FFC(nn.Module):
                 q_in_channels=out_cl,
                 kv_in_channels=out_cl,
                 channels=out_cl // cross_attention_args.get('attention_channel_scale_factor', 1),
+                out_channels=out_cl * cross_attention_args.get('attention_channel_scale_factor', 1),
                 num_heads=cross_attention_args.get('num_heads', 1))
             self.gl_cross_attention = CrossAttentionBlock(
                 q_in_channels=out_cg,
                 kv_in_channels=out_cg,
                 channels=out_cg // cross_attention_args.get('attention_channel_scale_factor', 1),
+                out_channels=out_cl * cross_attention_args.get('attention_channel_scale_factor', 1),
                 num_heads=cross_attention_args.get('num_heads', 1))
 
         self.gated = gated
