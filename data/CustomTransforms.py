@@ -14,10 +14,12 @@ class ToTensor(transforms.ToTensor):
 
 
 class ThresholdMask:
+    def __init__(self, threshold=0.5):
+        self.threshold = threshold
 
     def __call__(self, sample):
         image, gt = sample['image'], sample['gt']
-        gt = (gt > 0.5).int()
+        gt = (gt > self.threshold).int()
         return {'image': image, 'gt': gt}
 
 

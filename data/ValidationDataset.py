@@ -6,11 +6,14 @@ from torch.utils.data import Dataset
 
 from data.utils import get_path
 
+class ValidationPatchSquare(Dataset):
+    pass
+
 class ValidationDataset(Dataset):
 
-    def __init__(self, data_paths, patch_size=256, stride=256, transform=None):
+    def __init__(self, data_path, patch_size=256, stride=256, transform=None):
         super(ValidationDataset, self).__init__()
-        self.imgs = [path for data_path in data_paths for path in Path(data_path).rglob(f'imgs/*')]
+        self.imgs = list(Path(data_path).rglob(f'imgs/*'))
         self.patch_size = patch_size
         self.stride = stride
         self.transform = transform

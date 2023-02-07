@@ -25,14 +25,14 @@ class PatchSquare(Dataset):
 
     def __getitem__(self, index, merge_image=False):
         full_image_path = self.full_images[index]
-        full_image_idx = full_image_path.stem
+        full_image_idx = int(full_image_path.stem.split('_')[0])
         folder_idx = full_image_path.parent.parent.stem
         full_image = Image.open(full_image_path).convert("RGB")
-        background_image = Image.open(self.path / folder_idx / 'bg' / f'{full_image_idx}_bg.jpg').convert("RGB")
-        mask_image = Image.open(self.path / folder_idx / 'mask' / f'{full_image_idx}_mask.jpg').convert("L")
+        # background_image = Image.open(self.path / folder_idx / 'bg' / f'{full_image_idx}_bg.jpg').convert("RGB")
+        mask_image = Image.open(self.path / folder_idx / 'mask' / f'{full_image_idx}_mask.png').convert("L")
 
-        with open(self.path / folder_idx / 'metadata' / f'{full_image_idx}_metadata.json', 'r') as f:
-            metadata = json.load(f)
+        # with open(self.path / folder_idx / 'metadata' / f'{full_image_idx}_metadata.json', 'r') as f:
+        #     metadata = json.load(f)
 
         if self.transform:
             transform = self.transform({'image': full_image, 'gt': mask_image})
@@ -52,9 +52,9 @@ class PatchSquare(Dataset):
 
 class TrainingDataset(Dataset):
 
-    def __init__(self, data_paths, split_size=256, patch_size=384, transform=None):
+    def __init__(self, data_path, split_size=256, patch_size=384, transform=None):
         super(TrainingDataset, self).__init__()
-        self.imgs = [path for data_path in data_paths for path in Path(data_path).rglob(f'imgs_{patch_size}/*')]
+        self.imgs = list(Path(data_path).rglob(f'imgs_{patch_size}/*'))
         self.split_size = split_size
         self.transform = transform
 

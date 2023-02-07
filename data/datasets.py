@@ -1,9 +1,11 @@
 from torchvision.transforms import transforms
 
 from data.TrainingDataset import TrainingDataset, PatchSquare
-from data.ValidationDataset import ValidationDataset
+from data.ValidationDataset import ValidationPatchSquare, ValidationDataset
 from data.utils import get_transform
 from utils.htr_logging import get_logger
+from torch.utils.data import ConcatDataset
+from pathlib import Path
 
 logger = get_logger(__file__)
 
@@ -18,7 +20,14 @@ def make_train_dataset(config: dict):
 
     transform = get_transform(transform_variant=transform_variant, output_size=patch_size)
 
-    train_dataset = TrainingDataset(train_data_path, split_size=config["train_patch_size"], transform=transform)
+    datasets = []
+    for path in train_data_path:
+        if Path(path).name == 'patch_square':
+            datasets.append(PatchSquare(path, transform=transform))
+        else:
+            datasets.append(TrainingDataset(path, split_size=patch_size, transform=transform))
+
+    train_dataset = ConcatDataset(datasets)
 
     logger.info(f"Training set has {len(train_dataset)} instances")
 
@@ -32,7 +41,14 @@ def make_valid_dataset(config: dict):
 
     transform = transforms.Compose([transforms.ToTensor()])
 
-    valid_dataset = ValidationDataset(valid_data_path, patch_size=patch_size, stride=stride, transform=transform)
+    datasets = []
+    for path in valid_data_path:
+        if Path(path).name == 'patch_square':
+            datasets.append(ValidationPatchSquare(path, transform=transform))
+        else:
+            datasets.append(ValidationDataset(path, patch_size=patch_size, stride=stride, transform=transform))
+
+    valid_dataset = ConcatDataset(datasets)
 
     logger.info(f"Validation set has {len(valid_dataset)} instances")
     return valid_dataset
