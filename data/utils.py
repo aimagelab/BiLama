@@ -30,7 +30,7 @@ def get_transform(transform_variant: str, output_size: int):
     transform_list.append(CustomTransform.ToTensor())
 
     if transform_variant == 'threshold_mask':
-        transform_list.append(CustomTransform.ThresholdMask())
+        transform_list.append(CustomTransform.ThresholdMask(threshold=0.8))
 
     transform = transforms.Compose(transform_list)
     return transform

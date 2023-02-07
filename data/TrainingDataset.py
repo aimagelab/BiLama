@@ -37,7 +37,7 @@ class PatchSquare(Dataset):
         if self.transform:
             transform = self.transform({'image': full_image, 'gt': mask_image})
             full_image = transform['image']
-            mask_image = transform['gt']
+            mask_image = transform['gt'] 
 
         # Merge two images
         if merge_image:
