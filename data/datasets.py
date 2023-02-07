@@ -23,7 +23,8 @@ def make_train_dataset(config: dict):
     logger.info(f"Loading train datasets...")
     time_start = time.time()
     datasets = []
-    for path in train_data_path:
+    for i, path in enumerate(train_data_path):
+        logger.info(f"[{i}/{len(train_data_path)}] Loading train dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
             datasets.append(PatchSquare(path, transform=transform))
         else:
