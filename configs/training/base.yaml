@@ -48,3 +48,13 @@ valid_kwargs:
   shuffle: False
   pin_memory: True
   batch_size: 1
+
+
+# Test configuration
+test_batch_size: 1
+test_patch_size: 256
+test_stride: 256
+test_kwargs:
+  shuffle: False
+  pin_memory: True
+  batch_size: 1

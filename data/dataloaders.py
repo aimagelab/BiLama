@@ -18,3 +18,10 @@ def make_valid_dataloader(valid_dataset: Dataset, config: dict):
     valid_data_loader = torch.utils.data.DataLoader(valid_dataset, **valid_dataloader_config)
 
     return valid_data_loader
+
+
+def make_test_dataloader(test_dataset: Dataset, config: dict):
+    test_dataloader_config = config['valid_kwargs']
+    test_data_loader = torch.utils.data.DataLoader(test_dataset, **test_dataloader_config)
+
+    return test_data_loader

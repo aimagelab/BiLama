@@ -9,7 +9,7 @@ from torchvision.transforms import functional
 from typing_extensions import TypedDict
 
 from data.dataloaders import make_train_dataloader, make_valid_dataloader, make_test_dataloader
-from data.datasets import make_train_dataset, make_valid_dataset, make_test_dataset
+from data.datasets import make_train_val_dataset, make_test_dataset
 from data.utils import reconstruct_ground_truth
 from modules.FFC import LaMa
 from trainer.Losses import make_criterion
@@ -36,7 +36,7 @@ class LaMaTrainingModule:
         self.config = config
         self.device = device
 
-        self.train_dataset, self.valid_dataset = make_train_dataset(config)
+        self.train_dataset, self.valid_dataset = make_train_val_dataset(config)
         self.test_dataset = make_test_dataset(config)
         self.train_data_loader = make_train_dataloader(self.train_dataset, config)
         self.valid_data_loader = make_valid_dataloader(self.valid_dataset, config)
@@ -50,7 +50,7 @@ class LaMaTrainingModule:
                           use_cross_attention=config['use_cross_attention'],
                           cross_attention_args=config['cross_attention_args'])
 
-        num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        # num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         # Training
         self.epoch = 0
         self.num_epochs = config['num_epochs']

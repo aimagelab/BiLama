@@ -273,7 +273,7 @@ if __name__ == '__main__':
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
-    train_config['valid_data_path'] = args.valid_data_path
+    train_config['test_data_path'] = args.test_data_path
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
         train_config['cross_attention_args'] = {
@@ -284,6 +284,7 @@ if __name__ == '__main__':
 
     train_config['train_kwargs']['num_workers'] = args.num_workers
     train_config['valid_kwargs']['num_workers'] = args.num_workers
+    train_config['test_kwargs']['num_workers'] = args.num_workers
     train_config['train_kwargs']['batch_size'] = args.batch_size
     train_config['num_epochs'] = args.epochs
 
