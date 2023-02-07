@@ -1,5 +1,5 @@
 from torchvision.transforms import transforms
-
+import time
 from data.TrainingDataset import TrainingDataset, PatchSquare
 from data.ValidationDataset import ValidationPatchSquare, ValidationDataset
 from data.utils import get_transform
@@ -20,12 +20,15 @@ def make_train_dataset(config: dict):
 
     transform = get_transform(transform_variant=transform_variant, output_size=patch_size)
 
+    logger.info(f"Loading train datasets...")
+    time_start = time.time()
     datasets = []
     for path in train_data_path:
         if Path(path).name == 'patch_square':
             datasets.append(PatchSquare(path, transform=transform))
         else:
             datasets.append(TrainingDataset(path, split_size=patch_size, transform=transform))
+    logger.info(f"Loading train datasets took {time.time() - time_start:.2f} seconds")
 
     train_dataset = ConcatDataset(datasets)
 
@@ -41,12 +44,15 @@ def make_valid_dataset(config: dict):
 
     transform = transforms.Compose([transforms.ToTensor()])
 
+    logger.info(f"Loading valid datasets...")
+    time_start = time.time()
     datasets = []
     for path in valid_data_path:
         if Path(path).name == 'patch_square':
             datasets.append(ValidationPatchSquare(path, transform=transform))
         else:
             datasets.append(ValidationDataset(path, patch_size=patch_size, stride=stride, transform=transform))
+    logger.info(f"Loading valid datasets took {time.time() - time_start:.2f} seconds")
 
     valid_dataset = ConcatDataset(datasets)
 

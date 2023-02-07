@@ -75,8 +75,14 @@ def train(config_args, config):
 
                 trainer.model.train()
                 validator.reset()
+                data_times = []
+                train_times = []
 
+                start_data_time = time.time()
+                start_epoch_time = time.time()
                 for batch_idx, (train_in, train_out) in enumerate(trainer.train_data_loader):
+                    data_times.append(time.time() - start_data_time)
+                    start_train_time = time.time()
                     inputs, outputs = train_in.to(device), train_out.to(device)
 
                     trainer.optimizer.zero_grad()
@@ -90,6 +96,7 @@ def train(config_args, config):
                     tensor_bin = torch.where(predictions > threshold, 1., 0.)
                     tensor_diff = torch.abs(tensor_bin - outputs)
                     visualization += torch.sum(tensor_diff, dim=0)
+                    train_times.append(time.time() - start_train_time)
 
                     with torch.no_grad():
                         psnr, precision, recall = validator.compute(predictions, outputs)
@@ -115,6 +122,7 @@ def train(config_args, config):
                                 output = outputs[b].expand(3, -1, -1)
                                 union = torch.cat((original, pred, output), 2)
                                 training_images.append(wandb.Image(functional.to_pil_image(union), caption=f"Example"))
+                    start_data_time = time.time()
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_psnr, avg_train_precision, avg_train_recall = validator.get_metrics()
@@ -128,6 +136,8 @@ def train(config_args, config):
                 wandb_logs['train_avg_psnr'] = avg_train_psnr
                 wandb_logs['train_avg_precision'] = avg_train_precision
                 wandb_logs['train_avg_recall'] = avg_train_recall
+                wandb_logs['train_data_time'] = np.array(data_times).mean()
+                wandb_logs['train_time_per_iter'] = np.array(train_times).mean()
                 wandb_logs['Random Sample'] = random.choices(training_images, k=5)
 
                 # Make error images
@@ -140,8 +150,10 @@ def train(config_args, config):
                 validator.reset()
 
                 with torch.no_grad():
+                    start_valid_time = time.time()
                     valid_psnr, valid_precision, valid_recall, valid_loss, images = trainer.validation()
 
+                    wandb_logs['valid_time'] = time.time() - start_valid_time
                     wandb_logs['valid_avg_loss'] = valid_loss
                     wandb_logs['valid_avg_psnr'] = valid_psnr
                     wandb_logs['valid_avg_precision'] = valid_precision
@@ -181,6 +193,7 @@ def train(config_args, config):
 
                 trainer.epoch += 1
                 wandb_logs['epoch'] = trainer.epoch
+                wandb_logs['epoch_time'] = time.time() - start_epoch_time
                 logger.info('-' * 75)
 
                 if wandb_log:
