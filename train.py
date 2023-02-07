@@ -232,6 +232,8 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none', choices=['none', 'cross', 'self'])
+    parser.add_argument('--attention_num_heads', type=int, default=None)
+    parser.add_argument('--attention_channel_scale_factor', type=int, default=None)
     parser.add_argument('--n_blocks', type=int, default=9)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
     parser.add_argument('--seed', type=int, default=742)
@@ -268,6 +270,13 @@ if __name__ == '__main__':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.valid_data_path
+
+    if args.attention_num_heads and args.attention_channel_scale_factor:
+        train_config['cross_attention_args'] = {
+            'num_heads': args.attention_num_heads,
+            'attention_channel_scale_factor': args.attention_channel_scale_factor}
+    else:
+        train_config['cross_attention_args'] = None
 
     set_seed(args.seed)
 
