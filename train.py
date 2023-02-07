@@ -71,7 +71,6 @@ def train(config_args, config):
 
                 train_loss = 0.0
                 visualization = torch.zeros((1, config['train_patch_size'], config['train_patch_size']), device=device)
-                training_images = []
 
                 trainer.model.train()
                 validator.reset()
@@ -115,13 +114,6 @@ def train(config_args, config):
                             stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
-
-                            for b in range(len(inputs)):
-                                original = inputs[b]
-                                pred = predictions[b].expand(3, -1, -1)
-                                output = outputs[b].expand(3, -1, -1)
-                                union = torch.cat((original, pred, output), 2)
-                                training_images.append(wandb.Image(functional.to_pil_image(union), caption=f"Example"))
                     start_data_time = time.time()
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
@@ -138,12 +130,17 @@ def train(config_args, config):
                 wandb_logs['train_avg_recall'] = avg_train_recall
                 wandb_logs['train_data_time'] = np.array(data_times).mean()
                 wandb_logs['train_time_per_iter'] = np.array(train_times).mean()
-                wandb_logs['Random Sample'] = random.choices(training_images, k=5)
+
+                original = inputs[0]
+                pred = predictions[0].expand(3, -1, -1)
+                output = outputs[0].expand(3, -1, -1)
+                union = torch.cat((original, pred, output), 2)
+                wandb_logs['Random Sample'] = wandb.Image(functional.to_pil_image(union), caption=f"Example")
 
                 # Make error images
-                rescaled = torch.div(visualization, config['train_max_value'])
-                rescaled = torch.clamp(rescaled, min=0., max=1.)
-                wandb_logs['Errors'] = wandb.Image(functional.to_pil_image(rescaled))
+                # rescaled = torch.div(visualization, config['train_max_value'])
+                # rescaled = torch.clamp(rescaled, min=0., max=1.)
+                # wandb_logs['Errors'] = wandb.Image(functional.to_pil_image(rescaled))
 
                 # Validation
                 trainer.model.eval()
@@ -160,6 +157,11 @@ def train(config_args, config):
                     wandb_logs['valid_avg_recall'] = valid_recall
 
                     name_image, (valid_img, pred_img, gt_valid_img) = list(images.items())[0]
+                    target_height = 512
+                    valid_img = valid_img.resize((target_height, int(target_height * valid_img.height / valid_img.width)))
+                    pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
+                    gt_valid_img = gt_valid_img.resize((target_height, int(target_height * gt_valid_img.height / gt_valid_img.width)))
+
                     wandb_logs['Results'] = [wandb.Image(valid_img, caption=f"Sample: {name_image}"),
                                              wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
                                              wandb.Image(gt_valid_img, caption=f"Ground Truth Sample: {name_image}")]
@@ -235,7 +237,10 @@ if __name__ == '__main__':
     parser.add_argument('--attention_num_heads', type=int, default=None)
     parser.add_argument('--attention_channel_scale_factor', type=int, default=None)
     parser.add_argument('--n_blocks', type=int, default=9)
+    parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
+    parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--valid_data_path', type=str, nargs='+', required=True)
@@ -256,10 +261,9 @@ if __name__ == '__main__':
             args.operation.upper(),
             str(args.n_blocks) + 'RB',
             str(train_config['train_patch_size']) + 'PS',
+            args.attention + 'ATT',
+            str(uuid.uuid4())[:4]
         ]
-        if args.attention:
-            exp_name.append(args.attention + 'ATT')
-        exp_name.append(str(uuid.uuid4())[:4])
         args.experiment_name = '_'.join(exp_name)
 
     train_config['experiment_name'] = args.experiment_name
@@ -271,12 +275,19 @@ if __name__ == '__main__':
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.valid_data_path
 
+<<<<<<< Updated upstream
     if args.attention_num_heads and args.attention_channel_scale_factor:
         train_config['cross_attention_args'] = {
             'num_heads': args.attention_num_heads,
             'attention_channel_scale_factor': args.attention_channel_scale_factor}
     else:
         train_config['cross_attention_args'] = None
+=======
+    train_config['train_kwargs']['num_workers'] = args.num_workers
+    train_config['valid_kwargs']['num_workers'] = args.num_workers
+    train_config['train_kwargs']['batch_size'] = args.batch_size
+    train_config['num_epochs'] = args.epochs
+>>>>>>> Stashed changes
 
     set_seed(args.seed)
 
