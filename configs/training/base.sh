@@ -23,5 +23,5 @@ srun python3 train.py -c base --n_blocks @{n_blocks|9} --operation "@{operation|
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO19 \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DirtyDocuments \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/PALM \
-              --valid_data_path \
+              --test_data_path \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO18 \

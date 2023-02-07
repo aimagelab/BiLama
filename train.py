@@ -234,8 +234,8 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none', choices=['none', 'cross', 'self'])
-    parser.add_argument('--attention_num_heads', type=int, default=None)
-    parser.add_argument('--attention_channel_scale_factor', type=int, default=None)
+    parser.add_argument('--attention_num_heads', type=int, default=1)
+    parser.add_argument('--attention_channel_scale_factor', type=int, default=1)
     parser.add_argument('--n_blocks', type=int, default=9)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
@@ -243,7 +243,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
-    parser.add_argument('--valid_data_path', type=str, nargs='+', required=True)
+    parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
 
@@ -275,19 +275,17 @@ if __name__ == '__main__':
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.valid_data_path
 
-<<<<<<< Updated upstream
     if args.attention_num_heads and args.attention_channel_scale_factor:
         train_config['cross_attention_args'] = {
             'num_heads': args.attention_num_heads,
             'attention_channel_scale_factor': args.attention_channel_scale_factor}
     else:
         train_config['cross_attention_args'] = None
-=======
+
     train_config['train_kwargs']['num_workers'] = args.num_workers
     train_config['valid_kwargs']['num_workers'] = args.num_workers
     train_config['train_kwargs']['batch_size'] = args.batch_size
     train_config['num_epochs'] = args.epochs
->>>>>>> Stashed changes
 
     set_seed(args.seed)
 
