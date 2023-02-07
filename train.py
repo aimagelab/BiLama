@@ -218,7 +218,7 @@ if __name__ == '__main__':
                         help=f"The configuration name will use on WandB", default="debug_patch_square")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
-    parser.add_argument('--attention', type=str)
+    parser.add_argument('--attention', type=str, default='none', choices=['none', 'cross', 'self'])
     parser.add_argument('--n_blocks', type=int, default=9)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
     parser.add_argument('--seed', type=int, default=742)
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     train_config['experiment_name'] = args.experiment_name
     train_config['use_convolutions'] = args.operation == 'conv'
     train_config['n_blocks'] = args.n_blocks
-    train_config['attention'] = args.attention
+    train_config['use_cross_attention'] = args.attention == 'cross'
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.valid_data_path
 

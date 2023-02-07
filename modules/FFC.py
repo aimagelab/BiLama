@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing_extensions import TypedDict
+import math
 
 from modules.base import get_activation
 from modules.spatial_transform import LearnableSpatialTransformWrapper
@@ -157,12 +158,57 @@ class SpectralTransform(nn.Module):
         return output
 
 
+class CrossAttentionBlock(nn.Module):  # 60K params with 128,128,128
+    def __init__(self, q_in_channels, kv_in_channels, channels, num_heads=1):
+        super(CrossAttentionBlock, self).__init__()
+        assert channels % num_heads == 0, "channels must be divisible by num_heads"
+        self.num_heads = num_heads
+        self.q = nn.Conv1d(q_in_channels, channels, kernel_size=1)
+        self.k = nn.Conv1d(kv_in_channels, channels, kernel_size=1)
+        self.v = nn.Conv1d(kv_in_channels, channels, kernel_size=1)
+        self.proj_out = nn.Conv1d(channels, channels, kernel_size=1)
+        # todo norm???
+
+    def forward(self, query, key, value):
+        """
+
+        :param query: feature map with shape (batch, c, h, w)
+        :param key: feature map with shape (batch, c, h, w)
+        :param value: feature map with shape (batch, c, h, w)
+        :return: feature map with shape (batch, c, h, w)
+        """
+
+        b, c_q, *spatial_size = query.shape
+        _, c_k, *_ = key.shape
+        _, c_v, *_ = value.shape
+
+        query = query.reshape(b, c_q, -1)
+        key = key.reshape(b, c_k, -1)
+        value = value.reshape(b, c_v, -1)
+
+        q = self.q(query).reshape(b * self.num_heads, -1, query.shape[-1])
+        k = self.k(key).reshape(b * self.num_heads, -1, key.shape[-1])
+        v = self.v(value).reshape(b * self.num_heads, -1, value.shape[-1])
+
+        scale = 1. / math.sqrt(math.prod(spatial_size))
+        attention_weights = torch.bmm(q, k.transpose(1, 2)) * scale
+        attention_weights = F.softmax(attention_weights, dim=-1)
+        attention = torch.bmm(attention_weights, v)
+
+        attention_output = attention.reshape(b, -1, attention.shape[-1])
+        attention_output = self.proj_out(attention_output)
+        attention_output = attention_output.reshape(b, -1, *spatial_size)
+
+        return attention_output
+
+
 class FFC(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size,
                  ratio_gin, ratio_gout, stride=1, padding=0,
                  dilation=1, groups=1, bias=False, enable_lfu=True,
-                 padding_type='reflect', gated=False, use_convolutions=False, **spectral_kwargs):
+                 padding_type='reflect', gated=False, use_convolutions=False, use_cross_attention=False,
+                 **spectral_kwargs):
         super(FFC, self).__init__()
 
         assert stride == 1 or stride == 2, "Stride should be 1 or 2."
@@ -196,7 +242,13 @@ class FFC(nn.Module):
             self.convg2g = module(in_cg, out_cg, **conv2d_kwargs)
         else:
             module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
-            self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu, **spectral_kwargs)
+            self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu,
+                                  **spectral_kwargs)
+
+        self.use_cross_attention = use_cross_attention
+        if use_cross_attention:
+            self.lg_cross_attention = CrossAttentionBlock(q_in_channels=out_cl, kv_in_channels=out_cl, channels=out_cl)
+            self.gl_cross_attention = CrossAttentionBlock(q_in_channels=out_cg, kv_in_channels=out_cg, channels=out_cg)
 
         self.gated = gated
         module = nn.Identity if in_cg == 0 or out_cl == 0 or not self.gated else nn.Conv2d
@@ -218,9 +270,21 @@ class FFC(nn.Module):
             g2l_gate, l2g_gate = 1, 1
 
         if self.ratio_gout != 1:
-            out_xl = self.convl2l(x_l) + self.convg2l(x_g) * g2l_gate
+            cl2l = self.convl2l(x_l)
+            cg2l = self.convg2l(x_g) * g2l_gate
+
+            if self.use_cross_attention:
+                out_xl = self.lg_cross_attention(cg2l, cl2l, cl2l)
+            else:
+                out_xl = cl2l + cg2l
         if self.ratio_gout != 0:
-            out_xg = self.convl2g(x_l) * l2g_gate + self.convg2g(x_g)
+            cl2g = self.convl2g(x_l) * l2g_gate
+            cg2g = self.convg2g(x_g)
+
+            if self.use_cross_attention:
+                out_xg = self.gl_cross_attention(cl2g, cg2g, cg2g)
+            else:
+                out_xg = cl2g + cg2g
 
         return out_xl, out_xg
 
@@ -231,12 +295,13 @@ class FFC_BN_ACT(nn.Module):
                  kernel_size, ratio_gin, ratio_gout,
                  stride=1, padding=0, dilation=1, groups=1, bias=False,
                  norm_layer=nn.BatchNorm2d, activation_layer=nn.Identity,
-                 padding_type='reflect', use_convolutions=False,
+                 padding_type='reflect', use_convolutions=False, use_cross_attention=False,
                  enable_lfu=True, **kwargs):
         super(FFC_BN_ACT, self).__init__()
         self.ffc = FFC(in_channels, out_channels, kernel_size,
                        ratio_gin, ratio_gout, stride, padding, dilation,
-                       groups, bias, enable_lfu, padding_type=padding_type, use_convolutions=use_convolutions, **kwargs)
+                       groups, bias, enable_lfu, padding_type=padding_type, use_convolutions=use_convolutions,
+                       use_cross_attention=use_cross_attention, **kwargs)
         lnorm = nn.Identity if ratio_gout == 1 else norm_layer
         gnorm = nn.Identity if ratio_gout == 0 else norm_layer
         global_channels = int(out_channels * ratio_gout)
@@ -257,14 +322,16 @@ class FFC_BN_ACT(nn.Module):
 
 class FFCResnetBlock(nn.Module):
     def __init__(self, dim, padding_type, norm_layer, activation_layer=nn.ReLU, dilation=1,
-                 spatial_transform_kwargs=None, inline=False, use_convolutions=False, **conv_kwargs):
+                 spatial_transform_kwargs=None, inline=False, use_convolutions=False,
+                 use_cross_attention=False, **conv_kwargs):
         super().__init__()
         self.conv1 = FFC_BN_ACT(dim, dim, kernel_size=3, padding=dilation, dilation=dilation, norm_layer=norm_layer,
-                                activation_layer=activation_layer, padding_type=padding_type, use_convolutions=use_convolutions,
+                                activation_layer=activation_layer, padding_type=padding_type,
+                                use_convolutions=use_convolutions, use_cross_attention=use_cross_attention,
                                 **conv_kwargs)
         self.conv2 = FFC_BN_ACT(dim, dim, kernel_size=3, padding=dilation, dilation=dilation, norm_layer=norm_layer,
                                 activation_layer=activation_layer, use_convolutions=use_convolutions,
-                                padding_type=padding_type,
+                                padding_type=padding_type, use_cross_attention=use_cross_attention,
                                 **conv_kwargs)
         if spatial_transform_kwargs is not None:
             self.conv1 = LearnableSpatialTransformWrapper(self.conv1, **spatial_transform_kwargs)
@@ -305,13 +372,15 @@ class LaMa(nn.Module):
                  up_norm_layer=nn.BatchNorm2d, up_activation=nn.ReLU(True),
                  init_conv_kwargs={}, downsample_conv_kwargs={}, resnet_conv_kwargs={},
                  spatial_transform_layers=None, spatial_transform_kwargs={},
-                 add_out_act=True, max_features=1024, out_ffc=False, out_ffc_kwargs={}, use_convolutions=True):
+                 add_out_act=True, max_features=1024, out_ffc=False, out_ffc_kwargs={}, use_convolutions=True,
+                 use_cross_attention=False):
         assert (n_blocks >= 0)
         super().__init__()
 
         model = [nn.ReflectionPad2d(3),
                  FFC_BN_ACT(input_nc, ngf, kernel_size=7, padding=0, norm_layer=norm_layer,
-                            activation_layer=activation_layer, use_convolutions=use_convolutions, **init_conv_kwargs)]
+                            activation_layer=activation_layer, use_convolutions=use_convolutions,
+                            use_cross_attention=False, **init_conv_kwargs)]
 
         # Down-sample
         for i in range(n_downsampling):
@@ -327,6 +396,7 @@ class LaMa(nn.Module):
                                  norm_layer=norm_layer,
                                  activation_layer=activation_layer,
                                  use_convolutions=use_convolutions,
+                                 use_cross_attention=False,
                                  **cur_conv_kwargs)]
 
         mult = 2 ** n_downsampling
@@ -336,7 +406,9 @@ class LaMa(nn.Module):
         for i in range(n_blocks):
             cur_resblock = FFCResnetBlock(feats_num_bottleneck, padding_type=padding_type,
                                           activation_layer=activation_layer,
-                                          norm_layer=norm_layer, use_convolutions=use_convolutions, **resnet_conv_kwargs)
+                                          norm_layer=norm_layer, use_convolutions=use_convolutions,
+                                          use_cross_attention=use_cross_attention,
+                                          **resnet_conv_kwargs)
             if spatial_transform_layers is not None and i in spatial_transform_layers:
                 cur_resblock = LearnableSpatialTransformWrapper(cur_resblock, **spatial_transform_kwargs)
             model += [cur_resblock]
@@ -354,7 +426,9 @@ class LaMa(nn.Module):
 
         if out_ffc:
             model += [FFCResnetBlock(ngf, padding_type=padding_type, activation_layer=activation_layer,
-                                     norm_layer=norm_layer, inline=True, use_convolutions=use_convolutions, **out_ffc_kwargs)]
+                                     norm_layer=norm_layer, inline=True, use_convolutions=use_convolutions,
+                                     use_cross_attention=False,
+                                     **out_ffc_kwargs)]
 
         model += [nn.ReflectionPad2d(3),
                   nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
