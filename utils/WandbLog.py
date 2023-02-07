@@ -30,7 +30,7 @@ class WandbLog(object):
         self._dir = '/tmp'
         self._tags = tags
 
-    def setup(self, **kwargs):
+    def setup(self, config):
         if self._wandb is None:
             return
         self._initialized = True
@@ -38,7 +38,7 @@ class WandbLog(object):
         # Configuration
         if self._wandb.run is None:
             self._wandb.init(project=self._project, entity=self._entity, name=self._experiment_name, dir=self._dir,
-                             config={**kwargs}, tags=self._tags)
+                             config=config, tags=self._tags)
 
     def add_watch(self, model):
         self._wandb.watch(model, log="all")

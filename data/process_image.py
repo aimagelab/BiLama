@@ -48,7 +48,7 @@ class PatchImage:
         gt = root_original / 'gt_imgs'
         imgs = root_original / 'imgs'
 
-        path_imgs = list(imgs.rglob('*.png'))
+        path_imgs = list(imgs.rglob('*.png')) + list(imgs.rglob('*.jpg')) + list(imgs.rglob('*.bmp'))
         for i, img in enumerate(path_imgs):
             or_img = cv2.imread(str(img))
             gt_img = cv2.imread(str(gt / img.name))

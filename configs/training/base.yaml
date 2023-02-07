@@ -31,7 +31,6 @@ resnet_conv_kwargs:
 
 
 # Train configuration
-train_batch_size: 8
 train_patch_size: 256
 train_log_every: 100
 train_max_value: 500
@@ -41,13 +40,11 @@ train_kwargs:
 
 
 # Valid configuration
-valid_batch_size: 1
 valid_patch_size: 256
 valid_stride: 256
 valid_kwargs:
   shuffle: False
   pin_memory: True
-  batch_size: 1
 
 
 # Test configuration

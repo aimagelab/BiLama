@@ -138,7 +138,7 @@ class LaMaTrainingModule:
             gt_test_img = functional.to_pil_image(gt_test)
             images[image_name] = [test_img, pred_img, gt_test_img]
 
-        avg_loss = test_loss / len(self.valid_data_loader)
+        avg_loss = test_loss / len(self.test_data_loader)
         avg_psnr, avg_precision, avg_recall = validator.get_metrics()
 
         return avg_psnr, avg_precision, avg_recall, avg_loss, images
@@ -158,6 +158,6 @@ class LaMaTrainingModule:
 
             valid_loss += loss.item()
 
-        avg_loss = valid_loss / len(self.test_data_loader)
+        avg_loss = valid_loss / len(self.valid_data_loader)
         avg_psnr, avg_precision, avg_recall = validator.get_metrics()
         return avg_psnr, avg_precision, avg_recall, avg_loss,

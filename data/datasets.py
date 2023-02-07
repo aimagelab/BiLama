@@ -2,10 +2,12 @@ from torchvision.transforms import transforms
 import time
 from data.TrainingDataset import TrainingDataset, PatchSquare
 from data.TestDataset import TestPatchSquare, TestDataset
+from data.ValidationDataset import ValidationPatchSquare, ValidationDataset
 from data.utils import get_transform
 from utils.htr_logging import get_logger
 from torch.utils.data import ConcatDataset, random_split
 from pathlib import Path
+import data.CustomTransforms as CustomTransform
 
 logger = get_logger(__file__)
 
@@ -42,7 +44,7 @@ def make_val_dataset(config: dict):
     val_data_path = config['valid_data_path']
     patch_size = config['valid_patch_size']
 
-    transform = transforms.Compose([transforms.ToTensor()])
+    transform = transforms.Compose([CustomTransform.ToTensor()])
 
     logger.info(f"Loading validation datasets...")
     time_start = time.time()
@@ -52,7 +54,7 @@ def make_val_dataset(config: dict):
         if Path(path).name == 'patch_square':
             datasets.append(PatchSquare(path, transform=transform))
         else:
-            datasets.append(TrainingDataset(path, split_size=patch_size, transform=transform))
+            datasets.append(ValidationDataset(path, split_size=patch_size, transform=transform))
     logger.info(f"Loading validation datasets took {time.time() - time_start:.2f} seconds")
 
     validation_dataset = ConcatDataset(datasets)
@@ -79,7 +81,7 @@ def make_test_dataset(config: dict):
             datasets.append(TestDataset(path, patch_size=patch_size, stride=stride, transform=transform))
     logger.info(f"Loading test datasets took {time.time() - time_start:.2f} seconds")
 
-    valid_dataset = ConcatDataset(datasets)
+    test_dataset = ConcatDataset(datasets)
 
-    logger.info(f"Test set has {len(valid_dataset)} instances")
-    return valid_dataset
+    logger.info(f"Test set has {len(test_dataset)} instances")
+    return test_dataset

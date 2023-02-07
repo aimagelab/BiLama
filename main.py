@@ -4,9 +4,7 @@ import os
 from data.process_image import PatchImage, configure_args
 
 
-def create_patches(path_configuration: str):
-    args = configure_args(path_configuration)
-
+def create_patches(args):
     root_original = args.path_original
     root_ground_truth = args.path_ground_truth
     destination = args.path_destination
@@ -29,4 +27,23 @@ def create_patches(path_configuration: str):
 if __name__ == '__main__':
     root_dir = os.path.dirname(os.path.abspath(__file__))
     path_config = os.path.join(root_dir, 'configs/create_patches.yaml')
-    create_patches(path_config)
+    args = configure_args(path_config)
+    datasets = [
+        # 'D:\\DIBCO09',
+        # 'D:\\DIBCO10',
+        # 'D:\\DIBCO11',
+        # 'D:\\DIBCO12',
+        # 'D:\\DIBCO13',
+        # 'D:\\DIBCO14',
+        # 'D:\\DIBCO16',
+        # 'D:\\DIBCO17',
+        # 'D:\\DIBCO18',
+        # 'D:\\DIBCO19',
+        'D:\\PALM',
+        'D:\\DirtyDocuments',
+    ]
+    for dataset in datasets:
+        args.path_destination = dataset
+        args.path_ground_truth = dataset
+        args.path_original = dataset
+        create_patches(args)

@@ -30,23 +30,7 @@ def train(config_args, config):
     if config_args.use_wandb:  # Configure WandB
         tags = [Path(path).name for path in config_args.train_data_path]
         wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags)
-        params = {
-            "Architecture": "lama",
-
-            "Learning Rate": config['learning_rate'],
-            "Epochs": config['num_epochs'],
-
-            "Train Batch Size": config['train_batch_size'],
-            "Valid Batch Size": config['valid_batch_size'],
-            "Train Patch Size": config['train_patch_size'],
-            "Valid Patch Size": config['valid_patch_size'],
-            "Valid Stride": config['valid_stride'],
-
-            "Loss": config['kind_loss'],
-            "Optimizer": config['kind_optimizer'],
-            "Transform Variant": config['train_transform_variant'],
-        }
-        wandb_log.setup(**params)
+        wandb_log.setup(config)
 
     trainer = LaMaTrainingModule(config, device=device)
     if torch.cuda.is_available():
@@ -151,11 +135,11 @@ def train(config_args, config):
 
                 with torch.no_grad():
                     start_test_time = time.time()
-                    train_psnr, test_precision, test_recall, test_loss, images = trainer.test()
+                    test_psnr, test_precision, test_recall, test_loss, images = trainer.test()
 
                     wandb_logs['test_time'] = time.time() - start_test_time
                     wandb_logs['test_avg_loss'] = test_loss
-                    wandb_logs['test_avg_psnr'] = train_psnr
+                    wandb_logs['test_avg_psnr'] = test_psnr
                     wandb_logs['test_avg_precision'] = test_precision
                     wandb_logs['test_avg_recall'] = test_recall
 
@@ -202,7 +186,12 @@ def train(config_args, config):
                 wandb_logs['Best Recall'] = trainer.best_recall
 
                 stdout = f"Validation Loss: {valid_loss:.4f} - PSNR: {valid_psnr:.4f}"
-                stdout += f" Precision: {valid_precision:.4f}% - Recall: {valid_recall:.4f}%"
+                stdout += f" Precision: {valid_precision:.4f}% - Recall: {test_recall:.4f}%"
+                stdout += f" Best Loss: {trainer.best_psnr:.3f}"
+                logger.info(stdout)
+
+                stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_psnr:.4f}"
+                stdout += f" Precision: {test_precision:.4f}% - Recall: {test_recall:.4f}%"
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
 
@@ -247,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none', choices=['none', 'cross', 'self'])
-    parser.add_argument('--attention_num_heads', type=int, default=1)
+    parser.add_argument('--attention_num_heads', type=int, default=4)
     parser.add_argument('--attention_channel_scale_factor', type=int, default=1)
     parser.add_argument('--n_blocks', type=int, default=9)
     parser.add_argument('--num_workers', type=int, default=4)
@@ -286,6 +275,7 @@ if __name__ == '__main__':
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
+    train_config['valid_data_path'] = args.train_data_path
     train_config['test_data_path'] = args.test_data_path
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
@@ -299,6 +289,7 @@ if __name__ == '__main__':
     train_config['valid_kwargs']['num_workers'] = args.num_workers
     train_config['test_kwargs']['num_workers'] = args.num_workers
     train_config['train_kwargs']['batch_size'] = args.batch_size
+    train_config['valid_kwargs']['batch_size'] = args.batch_size
     train_config['num_epochs'] = args.epochs
 
     set_seed(args.seed)
