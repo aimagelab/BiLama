@@ -1,27 +1,31 @@
+import json
 import os
-from pathlib import Path
-import torchvision.transforms.functional as functional
+import random
+
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
+from pathlib import Path
 
 from data.utils import get_path
 
 
 class ValidationPatchSquare(Dataset):
+
     pass
 
 
-class TestDataset(Dataset):
+class ValidationDataset(Dataset):
 
-    def __init__(self, data_path, patch_size=256, stride=256, transform=None):
-        super(TestDataset, self).__init__()
-        self.imgs = list(Path(data_path).rglob(f'imgs/*'))
-        self.gt_imgs = [img_path.parent.parent / 'gt_imgs' / img_path.name for img_path in self.imgs]
+    def __init__(self, data_path, split_size=256, patch_size=384, transform=None):
+        super(ValidationDataset, self).__init__()
+        self.imgs = list(Path(data_path).rglob(f'val_imgs_{patch_size}/*'))
+        self.gt_imgs = [img_path.parent.parent / ('val_gt_' + img_path.parent.name) / img_path.name for img_path in self.imgs]
 
         self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
         self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
-        self.patch_size = patch_size
-        self.stride = stride
+
+        self.split_size = split_size
         self.transform = transform
 
     def __len__(self):
@@ -31,27 +35,11 @@ class TestDataset(Dataset):
         sample = self.imgs[index]
         gt_sample = self.gt_imgs[index]
 
-        # Create patches
-        padding_bottom = ((sample.height // self.patch_size) + 1) * self.patch_size - sample.height
-        padding_right = ((sample.width // self.patch_size) + 1) * self.patch_size - sample.width
-
-        tensor_padding = functional.to_tensor(sample).unsqueeze(0)
-        batch, channels, _, _ = tensor_padding.shape
-        tensor_padding = functional.pad(img=tensor_padding, padding=[0, 0, padding_right, padding_bottom], fill=1)
-        patches = tensor_padding.unfold(2, self.patch_size, self.stride).unfold(3, self.patch_size, self.stride)
-        num_rows = patches.shape[3]
-        patches = patches.reshape(batch, channels, -1, self.patch_size, self.patch_size)
-
         if self.transform:
-            sample = self.transform(sample)
-            gt_sample = self.transform(gt_sample)
+            transform = self.transform({'image': sample, 'gt': gt_sample})
+            sample = transform['image']
+            gt_sample = transform['gt']
 
-        item = {
-            'image_name': str(self.imgs[index]),
-            'sample': sample,
-            'num_rows': num_rows,
-            'samples_patches': patches,
-            'gt_sample': gt_sample
-        }
+        gt_sample = gt_sample.float()
 
-        return item
+        return sample, gt_sample
