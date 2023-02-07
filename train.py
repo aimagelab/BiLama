@@ -251,6 +251,8 @@ if __name__ == '__main__':
     train_config['use_convolutions'] = args.operation == 'conv'
     train_config['n_blocks'] = args.n_blocks
     train_config['use_cross_attention'] = args.attention == 'cross'
+    if args.attention == 'self':
+        raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.valid_data_path
 
