@@ -70,9 +70,10 @@ def train(config_args, config):
                 logger.info(f"Epoch {trainer.epoch} of {trainer.num_epochs}")
 
                 train_loss = 0.0
-                visualization = torch.zeros((1, config['train_patch_size'], config['train_patch_size']), device=device)
+                # visualization = torch.zeros((1, config['train_patch_size'], config['train_patch_size']), device=device)
 
                 trainer.model.train()
+
                 validator.reset()
                 data_times = []
                 train_times = []
@@ -92,9 +93,11 @@ def train(config_args, config):
 
                     train_loss += loss.item()
 
-                    tensor_bin = torch.where(predictions > threshold, 1., 0.)
-                    tensor_diff = torch.abs(tensor_bin - outputs)
-                    visualization += torch.sum(tensor_diff, dim=0)
+                    # code to gnerate the diff mask
+                    # tensor_bin = torch.where(predictions > threshold, 1., 0.)
+                    # tensor_diff = torch.abs(tensor_bin - outputs)
+                    # visualization += torch.sum(tensor_diff, dim=0)
+
                     train_times.append(time.time() - start_train_time)
 
                     with torch.no_grad():
@@ -147,24 +150,34 @@ def train(config_args, config):
                 validator.reset()
 
                 with torch.no_grad():
+                    start_test_time = time.time()
+                    train_psnr, test_precision, test_recall, test_loss, images = trainer.test()
+
+                    wandb_logs['test_time'] = time.time() - start_test_time
+                    wandb_logs['test_avg_loss'] = test_loss
+                    wandb_logs['test_avg_psnr'] = train_psnr
+                    wandb_logs['test_avg_precision'] = test_precision
+                    wandb_logs['test_avg_recall'] = test_recall
+
+                    name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
+                    target_height = 512
+                    test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
+                    pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
+                    gt_test_img = gt_test_img.resize((target_height, int(target_height * gt_test_img.height / gt_test_img.width)))
+
+                    wandb_logs['test_results'] = [wandb.Image(test_img, caption=f"Sample: {name_image}"),
+                                             wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
+                                             wandb.Image(gt_test_img, caption=f"Ground Truth Sample: {name_image}")]
+
                     start_valid_time = time.time()
-                    valid_psnr, valid_precision, valid_recall, valid_loss, images = trainer.validation()
+                    valid_psnr, valid_precision, valid_recall, valid_loss = trainer.validation()
 
                     wandb_logs['valid_time'] = time.time() - start_valid_time
                     wandb_logs['valid_avg_loss'] = valid_loss
                     wandb_logs['valid_avg_psnr'] = valid_psnr
                     wandb_logs['valid_avg_precision'] = valid_precision
                     wandb_logs['valid_avg_recall'] = valid_recall
-
-                    name_image, (valid_img, pred_img, gt_valid_img) = list(images.items())[0]
-                    target_height = 512
-                    valid_img = valid_img.resize((target_height, int(target_height * valid_img.height / valid_img.width)))
-                    pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
-                    gt_valid_img = gt_valid_img.resize((target_height, int(target_height * gt_valid_img.height / gt_valid_img.width)))
-
-                    wandb_logs['Results'] = [wandb.Image(valid_img, caption=f"Sample: {name_image}"),
-                                             wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
-                                             wandb.Image(gt_valid_img, caption=f"Ground Truth Sample: {name_image}")]
+                    wandb_logs['valid_patience'] = patience
 
                     if valid_psnr > trainer.best_psnr:
                         patience = 30

@@ -96,13 +96,17 @@ class LaMaTrainingModule:
         torch.save(checkpoint, dir_path)
         self.logger.info(f"Stored checkpoints {dir_path}")
 
-    def validation(self, threshold=0.5):
-        valid_loss = 0.0
+    def set_train_transforms(self, transforms):
+        self.train_data_loader.dataset.set_transforms(transforms)
+
+    @torch.no_grad()
+    def test(self, threshold=0.5):  # TODO change valid -> test
+        test_loss = 0.0
 
         images = {}
         validator = Validator()
 
-        for item in self.valid_data_loader:
+        for item in self.test_data_loader:
             image_name = item['image_name'][0]
             sample = item['sample']
             num_rows = item['num_rows'].item()
@@ -110,30 +114,49 @@ class LaMaTrainingModule:
             gt_sample = item['gt_sample']
 
             samples_patches = samples_patches.squeeze(0)
-            valid = samples_patches.to(self.device)
-            gt_valid = gt_sample.to(self.device)
+            test = samples_patches.to(self.device)
+            gt_test = gt_sample.to(self.device)
 
-            valid = valid.squeeze(0)
-            valid = valid.permute(1, 0, 2, 3)
-            pred = self.model(valid)
+            test = test.squeeze(0)
+            test = test.permute(1, 0, 2, 3)
+            pred = self.model(test)
 
-            pred = reconstruct_ground_truth(pred, gt_valid, num_rows=num_rows, config=self.config)
+            pred = reconstruct_ground_truth(pred, gt_test, num_rows=num_rows, config=self.config)
 
-            loss = self.criterion(pred, gt_valid)
-            valid_loss += loss.item()
+            loss = self.criterion(pred, gt_test)
+            test_loss += loss.item()
 
-            validator.compute(pred, gt_valid)
+            validator.compute(pred, gt_test)
 
             pred = torch.where(pred > threshold, 1., 0.)
-            valid = sample.squeeze(0).detach()
+            test = sample.squeeze(0).detach()
             pred = pred.squeeze(0).detach()
-            gt_valid = gt_valid.squeeze(0).detach()
-            valid_img = functional.to_pil_image(valid)
+            gt_test = gt_test.squeeze(0).detach()
+            test_img = functional.to_pil_image(test)
             pred_img = functional.to_pil_image(pred)
-            gt_valid_img = functional.to_pil_image(gt_valid)
-            images[image_name] = [valid_img, pred_img, gt_valid_img]
+            gt_test_img = functional.to_pil_image(gt_test)
+            images[image_name] = [test_img, pred_img, gt_test_img]
 
-        avg_loss = valid_loss / len(self.valid_data_loader)
+        avg_loss = test_loss / len(self.valid_data_loader)
         avg_psnr, avg_precision, avg_recall = validator.get_metrics()
 
         return avg_psnr, avg_precision, avg_recall, avg_loss, images
+
+    @torch.no_grad()
+    def validation(self):
+        valid_loss = 0.0
+        validator = Validator()
+
+        for batch_idx, (valid_in, valid_out) in enumerate(self.valid_data_loader):
+            inputs, outputs = valid_in.to(self.device), valid_out.to(self.device)
+
+            self.optimizer.zero_grad()
+            predictions = self.model(inputs)
+            loss = self.criterion(predictions, outputs)
+            validator.compute(predictions, outputs)
+
+            valid_loss += loss.item()
+
+        avg_loss = valid_loss / len(self.test_data_loader)
+        avg_psnr, avg_precision, avg_recall = validator.get_metrics()
+        return avg_psnr, avg_precision, avg_recall, avg_loss,

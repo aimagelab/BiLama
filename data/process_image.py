@@ -21,6 +21,8 @@ class PatchImage:
         destination_root = Path(destination_root)
         self.train_folder = destination_root / f'imgs_{patch_size}/'
         self.train_gt_folder = destination_root / f'gt_imgs_{patch_size}/'
+        self.valid_folder = destination_root / f'val_imgs_{patch_size_valid}/'
+        self.valid_gt_folder = destination_root / f'val_gt_imgs_{patch_size_valid}/'
 
         self.patch_size = patch_size
         self.overlap_size = overlap_size
@@ -36,6 +38,8 @@ class PatchImage:
     def _create_folders(self):
         self.train_folder.mkdir(parents=True, exist_ok=True)
         self.train_gt_folder.mkdir(parents=True, exist_ok=True)
+        self.valid_folder.mkdir(parents=True, exist_ok=True)
+        self.valid_gt_folder.mkdir(parents=True, exist_ok=True)
         logging.info("Configuration folders ...")
 
     def create_patches(self, root_original: str, root_ground_truth: str, test_dataset, validation_dataset):
@@ -44,10 +48,14 @@ class PatchImage:
         gt = root_original / 'gt_imgs'
         imgs = root_original / 'imgs'
 
-        for img in imgs.rglob('*.png'):
+        path_imgs = list(imgs.rglob('*.png'))
+        for i, img in enumerate(path_imgs):
             or_img = cv2.imread(str(img))
             gt_img = cv2.imread(str(gt / img.name))
-            self._split_train_images(or_img, gt_img, type="train")
+            if i < len(path_imgs) * 0.1:
+                self._split_train_images(or_img, gt_img, type="valid")
+            else:
+                self._split_train_images(or_img, gt_img, type="train")
 
     def _split_train_images(self, or_img: np.ndarray, gt_img: np.ndarray, type: str):
         runtime_size = self.overlap_size if type == "train" else self.patch_size_valid
@@ -90,6 +98,11 @@ class PatchImage:
                 if type == "train":
                     cv2.imwrite(str(self.train_folder / (str(self.number_image) + '.png')), dg_patch)
                     cv2.imwrite(str(self.train_gt_folder / (str(self.number_image) + '.png')), gt_patch)
+                    self.number_image += 1
+                    print(self.number_image)
+                elif type == "valid":
+                    cv2.imwrite(str(self.valid_folder / (str(self.number_image) + '.png')), dg_patch)
+                    cv2.imwrite(str(self.valid_gt_folder / (str(self.number_image) + '.png')), gt_patch)
                     self.number_image += 1
                     print(self.number_image)
 

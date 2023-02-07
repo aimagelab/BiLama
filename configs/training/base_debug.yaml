@@ -1,11 +1,11 @@
 input_channels: 3
 output_channels: 1
 
-kind_loss: "custom_mse"
+kind_loss: "binary_cross_entropy"
 kind_optimizer: "Adam"
 train_transform_variant: "threshold_mask"
 
-path_checkpoint: '/mnt/beegfs/work/FoMo_AIISDH/scascianelli/2023_ICCV_bilama/checkpoints/'
+path_checkpoint: 'D:/bilama/checkpoints/'
 learning_rate: 1.5e-4
 threshold: 0.5
 
@@ -30,10 +30,6 @@ resnet_conv_kwargs:
 
 
 # Train configuration
-train_data_path: [
-  "D:\\DIBCO16",
-  "D:\\DIBCO17"
-]
 train_batch_size: 8
 train_patch_size: 256
 train_log_every: 100
@@ -44,13 +40,19 @@ train_kwargs:
 
 
 # Valid configuration
-valid_data_path: [
-  "D:\\DIBCO18"
-]
 valid_batch_size: 1
 valid_patch_size: 256
 valid_stride: 256
 valid_kwargs:
+  shuffle: False
+  pin_memory: True
+  batch_size: 1
+
+# Test configuration
+test_batch_size: 1
+test_patch_size: 256
+test_stride: 256
+test_kwargs:
   shuffle: False
   pin_memory: True
   batch_size: 1

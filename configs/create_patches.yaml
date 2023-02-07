@@ -4,7 +4,7 @@ paths:
   destination: "D:\\DIBCO16"
 
 validation_dataset: "2016"
-testing_dataset: "2018"
+testing_dataset: "2016"
 patch_size: 384
 patch_size_valid: 256
 overlap_size: 192

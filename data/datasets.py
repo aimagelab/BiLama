@@ -24,7 +24,7 @@ def make_train_val_dataset(config: dict):
     time_start = time.time()
     datasets = []
     for i, path in enumerate(train_data_path):
-        logger.info(f"[{i}/{len(train_data_path)}] Loading train dataset from \"{path}\"")
+        logger.info(f"[{i+1}/{len(train_data_path)}] Loading train dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
             datasets.append(PatchSquare(path, transform=transform))
         else:
@@ -35,7 +35,10 @@ def make_train_val_dataset(config: dict):
     train_set_size = int(len(train_dataset) * 0.9)
     valid_set_size = len(train_dataset) - train_set_size
     train_dataset, valid_dataset = random_split(train_dataset, [train_set_size, valid_set_size])
-    valid_dataset.transform = transforms.Compose([transforms.ToTensor()])
+
+    # TODO fix that
+    # for dataset in valid_dataset.dataset.datasets:
+    #     dataset.transform = transforms.Compose([transforms.ToTensor()])
 
     logger.info(f"Training set has {len(train_dataset)} instances")
 
