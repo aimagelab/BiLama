@@ -1,6 +1,6 @@
-n_blocks,operation,att
-3,conv,none
-6,ffc,cross
-9
-12
+n_blocks,att,operation
+3,none,conv
+6,cross,ffc,
+9,cross_global
+12,cross_local
 15
