@@ -384,10 +384,15 @@ class LaMa(nn.Module):
         assert (n_blocks >= 0)
         super().__init__()
 
-        model = [nn.ReflectionPad2d(3),
-                 FFC_BN_ACT(input_nc, ngf, kernel_size=7, padding=0, norm_layer=norm_layer,
-                            activation_layer=activation_layer, use_convolutions=use_convolutions,
-                            cross_attention='none', cross_attention_args=None, **init_conv_kwargs)]
+        self.reflect = nn.ReflectionPad2d(3)
+        down_sampling_out_channels = [ngf]
+
+        self.down_sampling_layers = [FFC_BN_ACT(input_nc, down_sampling_out_channels[-1], kernel_size=7, padding=0, norm_layer=norm_layer,
+                                                activation_layer=activation_layer, use_convolutions=use_convolutions,
+                                                cross_attention='none', cross_attention_args=None, **init_conv_kwargs)]
+
+        self.resnet_layers = []
+        self.up_sampling_layers = []
 
         # Down-sample
         for i in range(n_downsampling):
@@ -397,15 +402,16 @@ class LaMa(nn.Module):
                 cur_conv_kwargs['ratio_gout'] = resnet_conv_kwargs.get('ratio_gin', 0)
             else:
                 cur_conv_kwargs = downsample_conv_kwargs
-            model += [FFC_BN_ACT(min(max_features, ngf * mult),
-                                 min(max_features, ngf * mult * 2),
-                                 kernel_size=3, stride=2, padding=1,
-                                 norm_layer=norm_layer,
-                                 activation_layer=activation_layer,
-                                 use_convolutions=use_convolutions,
-                                 cross_attention='none',
-                                 cross_attention_args=None,
-                                 **cur_conv_kwargs)]
+            down_sampling_out_channels.append(min(max_features, ngf * mult * 2))
+            self.down_sampling_layers += [FFC_BN_ACT(min(max_features, ngf * mult),
+                                                     down_sampling_out_channels[-1],
+                                                     kernel_size=3, stride=2, padding=1,
+                                                     norm_layer=norm_layer,
+                                                     activation_layer=activation_layer,
+                                                     use_convolutions=use_convolutions,
+                                                     cross_attention='none',
+                                                     cross_attention_args=None,
+                                                     **cur_conv_kwargs)]
 
         mult = 2 ** n_downsampling
         feats_num_bottleneck = min(max_features, ngf * mult)
@@ -420,30 +426,48 @@ class LaMa(nn.Module):
                                           **resnet_conv_kwargs)
             if spatial_transform_layers is not None and i in spatial_transform_layers:
                 cur_resblock = LearnableSpatialTransformWrapper(cur_resblock, **spatial_transform_kwargs)
-            model += [cur_resblock]
+            self.resnet_layers += [cur_resblock]
 
-        model += [ConcatTupleLayer()]
+        self.resnet_layers += [ConcatTupleLayer()]
 
         # Up-sample
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
-            model += [nn.ConvTranspose2d(min(max_features, ngf * mult),
-                                         min(max_features, int(ngf * mult / 2)),
-                                         kernel_size=3, stride=2, padding=1, output_padding=1),
-                      up_norm_layer(min(max_features, int(ngf * mult / 2))),
-                      up_activation]
+            layer = nn.Sequential(
+                nn.ConvTranspose2d(min(max_features, ngf * mult) + down_sampling_out_channels.pop(),
+                                   min(max_features, int(ngf * mult / 2)),
+                                   kernel_size=3, stride=2, padding=1, output_padding=1),
+                up_norm_layer(min(max_features, int(ngf * mult / 2))),
+                up_activation
+            )
+            self.up_sampling_layers.append(layer)
 
         if out_ffc:
-            model += [FFCResnetBlock(ngf, padding_type=padding_type, activation_layer=activation_layer,
-                                     norm_layer=norm_layer, inline=True, use_convolutions=use_convolutions,
-                                     cross_attention='none', cross_attention_args=None,
-                                     **out_ffc_kwargs)]
+            raise NotImplementedError
+            # layer = nn.Sequential(FFCResnetBlock(ngf, padding_type=padding_type, activation_layer=activation_layer,
+            #                          norm_layer=norm_layer, inline=True, use_convolutions=use_convolutions,
+            #                          cross_attention='none', cross_attention_args=None,
+            #                          **out_ffc_kwargs))
 
-        model += [nn.ReflectionPad2d(3),
-                  nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
-        if add_out_act:
-            model.append(get_activation('tanh' if add_out_act is True else add_out_act))
-        self.model = nn.Sequential(*model)
+        layer = nn.Sequential(nn.ReflectionPad2d(3), nn.Conv2d(ngf + down_sampling_out_channels.pop(), output_nc, kernel_size=7, padding=0))
+        self.up_sampling_layers.append(layer)
+
+        self.final_act = get_activation('tanh' if add_out_act is True else add_out_act)
+        self.resnet_layers = nn.Sequential(*self.resnet_layers)
+        self.down_sampling_layers = nn.Sequential(*self.down_sampling_layers)
+        self.up_sampling_layers = nn.Sequential(*self.up_sampling_layers)
 
     def forward(self, input):
-        return self.model(input)
+        input = self.reflect(input)
+        intermediate_outputs = []
+        for down_layer in self.down_sampling_layers:
+            input = down_layer(input)
+            if type(input[1]) is not torch.Tensor:
+                intermediate_outputs.append(input[0])
+            else:
+                intermediate_outputs.append(torch.cat([*input], 1))
+        input = self.resnet_layers(input)
+        for up_layer in self.up_sampling_layers:
+            intermediate_output = intermediate_outputs.pop()
+            input = up_layer(torch.cat([input, intermediate_output], dim=1))
+        return self.final_act(input)
