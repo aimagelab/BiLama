@@ -235,7 +235,8 @@ if __name__ == '__main__':
                         help=f"The configuration name will use on WandB", default="debug_patch_square")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
-    parser.add_argument('--attention', type=str, default='none', choices=['none', 'cross', 'self'])
+    parser.add_argument('--attention', type=str, default='none',
+                        choices=['none', 'cross', 'self', 'cross_local', 'cross_global'])
     parser.add_argument('--attention_num_heads', type=int, default=4)
     parser.add_argument('--attention_channel_scale_factor', type=int, default=1)
     parser.add_argument('--n_blocks', type=int, default=9)
@@ -271,7 +272,7 @@ if __name__ == '__main__':
     train_config['experiment_name'] = args.experiment_name
     train_config['use_convolutions'] = args.operation == 'conv'
     train_config['n_blocks'] = args.n_blocks
-    train_config['use_cross_attention'] = args.attention == 'cross'
+    train_config['cross_attention'] = args.attention
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
