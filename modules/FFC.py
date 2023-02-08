@@ -126,11 +126,9 @@ class SpectralTransform(nn.Module):
             nn.BatchNorm2d(out_channels // 2),
             nn.ReLU(inplace=True)
         )
-        self.fu = FourierUnit(
-            out_channels // 2, out_channels // 2, groups, **fu_kwargs)
+        self.fu = FourierUnit(out_channels // 2, out_channels // 2, groups, **fu_kwargs)
         if self.enable_lfu:
-            self.lfu = FourierUnit(
-                out_channels // 2, out_channels // 2, groups)
+            self.lfu = FourierUnit(out_channels // 2, out_channels // 2, groups)
         self.conv2 = torch.nn.Conv2d(
             out_channels // 2, out_channels, kernel_size=1, groups=groups, bias=False)
 
@@ -144,10 +142,8 @@ class SpectralTransform(nn.Module):
             n, c, h, w = x.shape
             split_no = 2
             split_s = h // split_no
-            xs = torch.cat(torch.split(
-                x[:, :c // 4], split_s, dim=-2), dim=1).contiguous()
-            xs = torch.cat(torch.split(xs, split_s, dim=-1),
-                           dim=1).contiguous()
+            xs = torch.cat(torch.split(x[:, :c // 4], split_s, dim=-2), dim=1).contiguous()
+            xs = torch.cat(torch.split(xs, split_s, dim=-1), dim=1).contiguous()
             xs = self.lfu(xs)
             xs = xs.repeat(1, 1, split_no, split_no).contiguous()
         else:
@@ -239,7 +235,7 @@ class FFC(nn.Module):
 
         if use_convolutions:
             module = nn.Identity if in_cg == 0 or out_cg == 0 else nn.Conv2d
-            self.convg2g = module(in_cg, out_cg, **conv2d_kwargs)
+            self.convg2g = module(in_cg, out_cg, kernel_size=1, stride=1, padding=0, bias=False)
         else:
             module = nn.Identity if in_cg == 0 or out_cg == 0 else SpectralTransform
             self.convg2g = module(in_cg, out_cg, stride, 1 if groups == 1 else groups // 2, enable_lfu,

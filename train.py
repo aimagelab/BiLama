@@ -22,7 +22,7 @@ from utils.ioutils import store_images
 logger = get_logger('main')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-logger.info(f"Using {device} device")
+assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to run this code.'
 
 
 def train(config_args, config):
@@ -291,6 +291,12 @@ if __name__ == '__main__':
     train_config['test_kwargs']['num_workers'] = args.num_workers
     train_config['train_kwargs']['batch_size'] = args.batch_size
     train_config['valid_kwargs']['batch_size'] = args.batch_size
+    train_config['test_kwargs']['batch_size'] = 1
+
+    train_config['train_batch_size'] = train_config['train_kwargs']['batch_size']
+    train_config['valid_batch_size'] = train_config['valid_kwargs']['batch_size']
+    train_config['test_batch_size'] = train_config['test_kwargs']['batch_size']
+
     train_config['num_epochs'] = args.epochs
 
     set_seed(args.seed)
