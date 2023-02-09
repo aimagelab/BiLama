@@ -51,7 +51,7 @@ class LaMaTrainingModule:
                           cross_attention=config['cross_attention'],
                           cross_attention_args=config['cross_attention_args'])
 
-        # num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        config['num_params'] = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         # Training
         self.epoch = 0
         self.num_epochs = config['num_epochs']
