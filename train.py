@@ -246,6 +246,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
+    parser.add_argument('--use_skip_connections', type=str, default='False', choices=['True', 'False'])
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -262,18 +263,21 @@ if __name__ == '__main__':
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
 
+    args.use_skip_connections = args.use_skip_connections == 'True'
     if args.experiment_name is None:
         exp_name = [
             args.operation.upper(),
             str(args.n_blocks) + 'RB',
             str(train_config['train_patch_size']) + 'PS',
             args.attention + 'ATT',
+            'SKIP' if args.use_skip_connections else 'NO_SKIP',
             str(uuid.uuid4())[:4]
         ]
         args.experiment_name = '_'.join(exp_name)
 
     train_config['experiment_name'] = args.experiment_name
     train_config['use_convolutions'] = args.operation == 'conv'
+    train_config['use_skip_connections'] = args.use_skip_connections
     train_config['n_blocks'] = args.n_blocks
     train_config['cross_attention'] = args.attention
     if args.attention == 'self':

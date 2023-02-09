@@ -49,7 +49,8 @@ class LaMaTrainingModule:
                           resnet_conv_kwargs=config['resnet_conv_kwargs'], n_blocks=config['n_blocks'],
                           use_convolutions=config['use_convolutions'],
                           cross_attention=config['cross_attention'],
-                          cross_attention_args=config['cross_attention_args'])
+                          cross_attention_args=config['cross_attention_args'],
+                          use_skip_connections=config['use_skip_connections'])
 
         config['num_params'] = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         # Training
