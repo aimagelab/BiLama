@@ -135,25 +135,24 @@ def train(config_args, config):
                 validator.reset()
 
                 with torch.no_grad():
-                    # TODO add test
-                    # start_test_time = time.time()
-                    # test_psnr, test_precision, test_recall, test_loss, images = trainer.test()
-                    #
-                    # wandb_logs['test_time'] = time.time() - start_test_time
-                    # wandb_logs['test_avg_loss'] = test_loss
-                    # wandb_logs['test_avg_psnr'] = test_psnr
-                    # wandb_logs['test_avg_precision'] = test_precision
-                    # wandb_logs['test_avg_recall'] = test_recall
-                    #
-                    # name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
-                    # target_height = 512
-                    # test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
-                    # pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
-                    # gt_test_img = gt_test_img.resize((target_height, int(target_height * gt_test_img.height / gt_test_img.width)))
-                    #
-                    # wandb_logs['test_results'] = [wandb.Image(test_img, caption=f"Sample: {name_image}"),
-                    #                          wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
-                    #                          wandb.Image(gt_test_img, caption=f"Ground Truth Sample: {name_image}")]
+                    start_test_time = time.time()
+                    test_psnr, test_precision, test_recall, test_loss, images = trainer.test()
+
+                    wandb_logs['test_time'] = time.time() - start_test_time
+                    wandb_logs['test_avg_loss'] = test_loss
+                    wandb_logs['test_avg_psnr'] = test_psnr
+                    wandb_logs['test_avg_precision'] = test_precision
+                    wandb_logs['test_avg_recall'] = test_recall
+
+                    name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
+                    target_height = 512
+                    test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
+                    pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
+                    gt_test_img = gt_test_img.resize((target_height, int(target_height * gt_test_img.height / gt_test_img.width)))
+
+                    wandb_logs['test_results'] = [wandb.Image(test_img, caption=f"Sample: {name_image}"),
+                                             wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
+                                             wandb.Image(gt_test_img, caption=f"Ground Truth Sample: {name_image}")]
 
                     start_valid_time = time.time()
                     valid_psnr, valid_precision, valid_recall, valid_loss = trainer.validation()
@@ -192,11 +191,10 @@ def train(config_args, config):
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
 
-                # TODO add test
-                # stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_psnr:.4f}"
-                # stdout += f" Precision: {test_precision:.4f}% - Recall: {test_recall:.4f}%"
-                # stdout += f" Best Loss: {trainer.best_psnr:.3f}"
-                # logger.info(stdout)
+                stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_psnr:.4f}"
+                stdout += f" Precision: {test_precision:.4f}% - Recall: {test_recall:.4f}%"
+                stdout += f" Best Loss: {trainer.best_psnr:.3f}"
+                logger.info(stdout)
 
                 trainer.epoch += 1
                 wandb_logs['epoch'] = trainer.epoch
@@ -246,7 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
-    parser.add_argument('--use_skip_connections', type=str, default='False', choices=['True', 'False'])
+    parser.add_argument('--use_skip_connections', type=eval, default='False', choices=['True', 'False'])
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -263,7 +261,6 @@ if __name__ == '__main__':
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
 
-    args.use_skip_connections = args.use_skip_connections == 'True'
     if args.experiment_name is None:
         exp_name = [
             args.operation.upper(),

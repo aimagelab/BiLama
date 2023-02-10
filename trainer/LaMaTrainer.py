@@ -102,7 +102,7 @@ class LaMaTrainingModule:
         self.train_data_loader.dataset.set_transforms(transforms)
 
     @torch.no_grad()
-    def test(self, threshold=0.5):  # TODO change valid -> test
+    def test(self, threshold=0.5):
         test_loss = 0.0
 
         images = {}

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --gres=gpu:2080:1
+#SBATCH --gres=gpu:1
 #SBATCH --partition=prod
 #SBATCH -e /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_%j.err
 #SBATCH -o /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_%j.out

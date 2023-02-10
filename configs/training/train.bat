@@ -1,0 +1,6 @@
+call activate Handwriting_Transformers
+cd C:\Users\Max\PycharmProjects\BiLama
+python train.py -c base_debug --train_data_path D:\DIBCO11 D:\DIBCO12 D:\DIBCO13 D:\DIBCO14 D:\DIBCO16 D:\DIBCO17 --test_data_path D:\DIBCO18 --n_blocks 3 --num_workers 0 --epochs 150 --batch_size 4 --attention none --operation conv
+python train.py -c base_debug --train_data_path D:\DIBCO11 D:\DIBCO12 D:\DIBCO13 D:\DIBCO14 D:\DIBCO16 D:\DIBCO17 --test_data_path D:\DIBCO18 --n_blocks 3 --num_workers 0 --epochs 150 --batch_size 4 --attention none --operation ffc
+python train.py -c base_debug --train_data_path D:\DIBCO11 D:\DIBCO12 D:\DIBCO13 D:\DIBCO14 D:\DIBCO16 D:\DIBCO17 --test_data_path D:\DIBCO18 --n_blocks 3 --num_workers 0 --epochs 150 --batch_size 4 --attention cross --operation conv
+python train.py -c base_debug --train_data_path D:\DIBCO11 D:\DIBCO12 D:\DIBCO13 D:\DIBCO14 D:\DIBCO16 D:\DIBCO17 --test_data_path D:\DIBCO18 --n_blocks 3 --num_workers 0 --epochs 150 --batch_size 4 --attention cross --operation ffc
