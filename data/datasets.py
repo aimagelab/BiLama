@@ -52,7 +52,7 @@ def make_val_dataset(config: dict):
     for i, path in enumerate(val_data_path):
         logger.info(f"[{i}/{len(val_data_path)}] Loading validation dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
-            datasets.append(PatchSquare(path, transform=transform))
+            datasets.append(ValidationPatchSquare(path, transform=transform))
         else:
             datasets.append(ValidationDataset(path, split_size=patch_size, transform=transform))
     logger.info(f"Loading validation datasets took {time.time() - time_start:.2f} seconds")
