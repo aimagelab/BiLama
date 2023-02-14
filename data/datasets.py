@@ -1,6 +1,6 @@
 from torchvision.transforms import transforms
 import time
-from data.TrainingDataset import TrainingDataset, PatchSquare
+from data.TrainingDataset import TrainingDataset, TrainPatchSquare
 from data.TestDataset import TestPatchSquare, TestDataset
 from data.ValidationDataset import ValidationPatchSquare, ValidationDataset
 from data.utils import get_transform
@@ -28,7 +28,7 @@ def make_train_dataset(config: dict):
     for i, path in enumerate(train_data_path):
         logger.info(f"[{i+1}/{len(train_data_path)}] Loading train dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
-            datasets.append(PatchSquare(path, transform=transform))
+            datasets.append(TrainPatchSquare(path, transform=transform))
         else:
             datasets.append(TrainingDataset(path, split_size=patch_size, transform=transform))
     logger.info(f"Loading train datasets took {time.time() - time_start:.2f} seconds")

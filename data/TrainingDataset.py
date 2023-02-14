@@ -10,15 +10,15 @@ from pathlib import Path
 from data.utils import get_path
 
 
-class PatchSquare(Dataset):
+class TrainPatchSquare(Dataset):
 
     def __init__(self, path: str, transform=None):
 
-        super(PatchSquare, self).__init__()
+        super(TrainPatchSquare, self).__init__()
         self.path = Path(path)
         self.transform = transform
 
-        self.full_images = list(self.path.rglob('*/full/*'))
+        self.full_images = list(self.path.rglob('train/full/*'))
 
         self.mask_images = [
             self.path / full_image.parent.parent.stem / 'mask' / f'{int(full_image.stem.split("_")[0])}_mask.png'
