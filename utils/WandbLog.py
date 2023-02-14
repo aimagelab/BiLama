@@ -40,6 +40,23 @@ class WandbLog(object):
             self._wandb.init(project=self._project, entity=self._entity, name=self._experiment_name, dir=self._dir,
                              config=config, tags=self._tags)
 
+        # Set up the wandb metrics
+        self._wandb.define_metric('test/avg_precision', summary='max')
+        self._wandb.define_metric('test/avg_recall', summary='max')
+        self._wandb.define_metric('test/avg_loss', summary='min')
+        self._wandb.define_metric('test/avg_psnr', summary='max')
+
+        self._wandb.define_metric('valid/avg_precision', summary='max')
+        self._wandb.define_metric('valid/avg_recall', summary='max')
+        self._wandb.define_metric('valid/avg_loss', summary='min')
+        self._wandb.define_metric('valid/avg_psnr', summary='max')
+
+        self._wandb.define_metric('train/avg_precision', summary='max')
+        self._wandb.define_metric('train/avg_recall', summary='max')
+        self._wandb.define_metric('train/avg_loss', summary='min')
+        self._wandb.define_metric('train/avg_psnr', summary='max')
+
+
     def add_watch(self, model):
         self._wandb.watch(model, log="all")
 

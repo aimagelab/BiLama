@@ -6,7 +6,7 @@ import random
 import cv2
 import numpy as np
 import yaml
-from tqdm import tqdm
+# from tqdm import tqdm
 from pathlib import Path
 
 

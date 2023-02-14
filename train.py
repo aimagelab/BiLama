@@ -244,13 +244,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
-    parser.add_argument('--use_skip_connections', type=eval, default='False', choices=['True', 'False'])
+    parser.add_argument('--use_skip_connections', type=str, default='False', choices=['True', 'False'])
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
+    args.use_skip_connections = eval(args.use_skip_connections)
 
     config_filename = args.configuration
 
