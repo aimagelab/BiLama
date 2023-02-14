@@ -16,7 +16,7 @@ class ValidationPatchSquare(Dataset):
         self.path = Path(path)
         self.transform = transform
 
-        self.full_images = list(self.path.rglob('eval/full/*'))
+        self.full_images = list(self.path.rglob('eval/*/full/*'))
 
         self.mask_images = [
             self.path / full_image.parent.parent.stem / 'mask' / f'{int(full_image.stem.split("_")[0])}_mask.png'
