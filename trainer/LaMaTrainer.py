@@ -128,9 +128,9 @@ class LaMaTrainingModule:
             loss = self.criterion(pred, gt_test)
             test_loss += loss.item()
 
+            pred = torch.where(pred > threshold, 1., 0.)
             validator.compute(pred, gt_test)
 
-            pred = torch.where(pred > threshold, 1., 0.)
             test = sample.squeeze(0).detach()
             pred = pred.squeeze(0).detach()
             gt_test = gt_test.squeeze(0).detach()
