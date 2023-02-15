@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #SBATCH --gres=gpu:1
 #SBATCH --partition=prod
@@ -8,10 +9,9 @@
 
 source activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
-scontrol update JobID="$SLURM_JOB_ID" name="bilama_@{n_blocks}_@{operation}_@{att}"
+scontrol update JobID="$SLURM_JOB_ID" name="bilama_@{n_blocks}_@{operation}_@{att}_SKIP@{skip}_patch"
 srun python3 train.py -c base --n_blocks @{n_blocks|9} \
-              --operation "@{operation|ffc}" --attention @{att|none} --num_workers 4 --epochs 500 \
-              --train_data_path \
+              --operation "@{operation|ffc}" --attention @{att|none} --num_workers 2 --epochs 500 --skip @{skip} --unet_layers ${unet} \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO09 \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO10 \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO11 \
@@ -23,5 +23,6 @@ srun python3 train.py -c base --n_blocks @{n_blocks|9} \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO19 \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DirtyDocuments \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/PALM \
+              /mnt/beegfs/work/FoMo_AIISDH/datasets/patch_square \
               --test_data_path \
               /mnt/beegfs/work/FoMo_AIISDH/datasets/DIBCO18
