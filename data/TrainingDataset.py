@@ -12,10 +12,10 @@ from data.utils import get_path
 
 class TrainPatchSquare(Dataset):
 
-    def __init__(self, path: str, transform=None):
+    def __init__(self, path: Path, transform=None):
 
         super(TrainPatchSquare, self).__init__()
-        self.path = Path(path) / 'train'
+        self.path = Path(path)
         self.transform = transform
 
         self.full_images_paths = list(self.path.rglob('*/full/*'))

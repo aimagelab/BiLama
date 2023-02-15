@@ -38,8 +38,8 @@ class PatchImage:
     def _create_folders(self):
         self.train_folder.mkdir(parents=True, exist_ok=True)
         self.train_gt_folder.mkdir(parents=True, exist_ok=True)
-        self.valid_folder.mkdir(parents=True, exist_ok=True)
-        self.valid_gt_folder.mkdir(parents=True, exist_ok=True)
+        # self.valid_folder.mkdir(parents=True, exist_ok=True)
+        # self.valid_gt_folder.mkdir(parents=True, exist_ok=True)
         logging.info("Configuration folders ...")
 
     def create_patches(self, root_original: str, root_ground_truth: str, test_dataset, validation_dataset):
@@ -52,10 +52,10 @@ class PatchImage:
         for i, img in enumerate(path_imgs):
             or_img = cv2.imread(str(img))
             gt_img = cv2.imread(str(gt / img.name))
-            if i < len(path_imgs) * 0.1:
-                self._split_train_images(or_img, gt_img, type="valid")
-            else:
-                self._split_train_images(or_img, gt_img, type="train")
+            # if i < len(path_imgs) * 0.1:
+            #     self._split_train_images(or_img, gt_img, type="valid")
+            # else:
+            self._split_train_images(or_img, gt_img, type="train")
 
     def _split_train_images(self, or_img: np.ndarray, gt_img: np.ndarray, type: str):
         runtime_size = self.overlap_size if type == "train" else self.patch_size_valid

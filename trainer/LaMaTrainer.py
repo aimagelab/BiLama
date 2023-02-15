@@ -36,8 +36,11 @@ class LaMaTrainingModule:
         self.config = config
         self.device = device
 
-        self.train_dataset = make_train_dataset(config)
-        self.valid_dataset = make_val_dataset(config)
+        self.training_only_with_patch_square = False
+        if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
+            self.training_only_with_patch_square = True
+        self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
+        self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
         self.test_dataset = make_test_dataset(config)
         self.train_data_loader = make_train_dataloader(self.train_dataset, config)
         self.valid_data_loader = make_valid_dataloader(self.valid_dataset, config)
@@ -145,7 +148,50 @@ class LaMaTrainingModule:
         return avg_psnr, avg_precision, avg_recall, avg_loss, images
 
     @torch.no_grad()
-    def validation(self):
+    def validation(self, threshold=0.5):
+        valid_loss = 0.0
+
+        images = {}
+        validator = Validator()
+
+        for item in self.valid_data_loader:
+            image_name = item['image_name'][0]
+            sample = item['sample']
+            num_rows = item['num_rows'].item()
+            samples_patches = item['samples_patches']
+            gt_sample = item['gt_sample']
+
+            samples_patches = samples_patches.squeeze(0)
+            valid = samples_patches.to(self.device)
+            gt_valid = gt_sample.to(self.device)
+
+            valid = valid.squeeze(0)
+            valid = valid.permute(1, 0, 2, 3)
+            pred = self.model(valid)
+
+            pred = reconstruct_ground_truth(pred, gt_valid, num_rows=num_rows, config=self.config)
+
+            loss = self.criterion(pred, gt_valid)
+            valid_loss += loss.item()
+
+            pred = torch.where(pred > threshold, 1., 0.)
+            validator.compute(pred, gt_valid)
+
+            valid = sample.squeeze(0).detach()
+            pred = pred.squeeze(0).detach()
+            gt_valid = gt_valid.squeeze(0).detach()
+            valid_img = functional.to_pil_image(valid)
+            pred_img = functional.to_pil_image(pred)
+            gt_test_img = functional.to_pil_image(gt_valid)
+            images[image_name] = [valid_img, pred_img, gt_test_img]
+
+        avg_loss = valid_loss / len(self.valid_data_loader)
+        avg_psnr, avg_precision, avg_recall = validator.get_metrics()
+
+        return avg_psnr, avg_precision, avg_recall, avg_loss, images
+
+    @torch.no_grad()
+    def validation_patch_square(self):
         valid_loss = 0.0
         validator = Validator()
 
