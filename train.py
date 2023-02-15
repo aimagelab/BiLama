@@ -103,8 +103,6 @@ def train(config_args, config):
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
                     start_data_time = time.time()
-                    if size >= 1000:
-                        break
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_psnr, avg_train_precision, avg_train_recall = validator.get_metrics()
