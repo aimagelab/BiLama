@@ -29,18 +29,18 @@ if __name__ == '__main__':
     path_config = os.path.join(root_dir, 'configs/create_patches.yaml')
     args = configure_args(path_config)
     datasets = [
-        # 'D:\\DIBCO09',
-        # 'D:\\DIBCO10',
-        # 'D:\\DIBCO11',
-        # 'D:\\DIBCO12',
-        # 'D:\\DIBCO13',
-        # 'D:\\DIBCO14',
-        # 'D:\\DIBCO16',
-        # 'D:\\DIBCO17',
-        # 'D:\\DIBCO18',
-        # 'D:\\DIBCO19',
-        'D:\\PALM',
-        'D:\\DirtyDocuments',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO09/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO10/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO11/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO12/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO13/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO14/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO16/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO17/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO18/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO19/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/PALM/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DirtyDocuments/train',
     ]
     for dataset in datasets:
         args.path_destination = dataset

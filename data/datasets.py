@@ -12,7 +12,7 @@ import data.CustomTransforms as CustomTransform
 logger = get_logger(__file__)
 
 
-def make_train_dataset(config: dict):
+def make_train_dataset(config: dict, training_only_with_patch_square=False):
     train_data_path = config['train_data_path']
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
@@ -28,9 +28,10 @@ def make_train_dataset(config: dict):
     for i, path in enumerate(train_data_path):
         logger.info(f"[{i+1}/{len(train_data_path)}] Loading train dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
-            datasets.append(TrainPatchSquare(path, transform=transform))
+            patch_square_path = Path(path) / 'train' if training_only_with_patch_square else Path(path)
+            datasets.append(TrainPatchSquare(patch_square_path, transform=transform))
         else:
-            datasets.append(TrainingDataset(path, split_size=patch_size, transform=transform))
+            datasets.append(TrainingDataset(Path(path) / 'train', split_size=patch_size, transform=transform))
     logger.info(f"Loading train datasets took {time.time() - time_start:.2f} seconds")
 
     train_dataset = ConcatDataset(datasets)
@@ -40,7 +41,7 @@ def make_train_dataset(config: dict):
     return train_dataset
 
 
-def make_val_dataset(config: dict):
+def make_val_dataset(config: dict, training_only_with_patch_square=False):
     val_data_path = config['valid_data_path']
     patch_size = config['valid_patch_size']
 
@@ -52,14 +53,24 @@ def make_val_dataset(config: dict):
     for i, path in enumerate(val_data_path):
         logger.info(f"[{i}/{len(val_data_path)}] Loading validation dataset from \"{path}\"")
         if Path(path).name == 'patch_square':
-            datasets.append(ValidationPatchSquare(path, transform=transform))
+            if training_only_with_patch_square:
+                datasets.append(ValidationPatchSquare(Path(path) / 'eval', transform=transform))
         else:
-            datasets.append(ValidationDataset(path, split_size=patch_size, transform=transform))
+            stride = config['test_stride']
+            datasets.append(
+                TestDataset(
+                    data_path=Path(path) / 'eval',
+                    patch_size=patch_size,
+                    stride=stride,
+                    transform=transform,
+                    is_validation=True
+                )
+            )
     logger.info(f"Loading validation datasets took {time.time() - time_start:.2f} seconds")
 
     validation_dataset = ConcatDataset(datasets)
 
-    logger.info(f"Training set has {len(validation_dataset)} instances")
+    logger.info(f"Validation set has {len(validation_dataset)} instances")
 
     return validation_dataset
 
@@ -78,7 +89,8 @@ def make_test_dataset(config: dict):
         if Path(path).name == 'patch_square':
             datasets.append(ValidationPatchSquare(path, transform=transform))
         else:
-            datasets.append(TestDataset(path, patch_size=patch_size, stride=stride, transform=transform))
+            datasets.append(
+                TestDataset(path, patch_size=patch_size, stride=stride, transform=transform, is_validation=False))
     logger.info(f"Loading test datasets took {time.time() - time_start:.2f} seconds")
 
     test_dataset = ConcatDataset(datasets)

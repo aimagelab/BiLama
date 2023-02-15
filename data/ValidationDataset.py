@@ -11,9 +11,9 @@ from data.utils import get_path
 
 
 class ValidationPatchSquare(Dataset):
-    def __init__(self, path: str, transform=None):
+    def __init__(self, path: Path, transform=None):
         super(ValidationPatchSquare, self).__init__()
-        self.path = Path(path) / 'eval'
+        self.path = Path(path)
         self.transform = transform
 
         self.full_images_paths = list(self.path.rglob('*/full/*'))

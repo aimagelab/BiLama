@@ -155,7 +155,10 @@ def train(config_args, config):
                                              wandb.Image(gt_test_img, caption=f"Ground Truth Sample: {name_image}")]
 
                     start_valid_time = time.time()
-                    valid_psnr, valid_precision, valid_recall, valid_loss = trainer.validation()
+                    if trainer.training_only_with_patch_square:
+                        valid_psnr, valid_precision, valid_recall, valid_loss = trainer.validation_patch_square()
+                    else:
+                        valid_psnr, valid_precision, valid_recall, valid_loss, images = trainer.validation()
 
                     wandb_logs['valid_time'] = time.time() - start_valid_time
                     wandb_logs['valid_avg_loss'] = valid_loss
