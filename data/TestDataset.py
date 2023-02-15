@@ -15,11 +15,12 @@ class TestDataset(Dataset):
 
     def __init__(self, data_path, patch_size=256, stride=256, transform=None, is_validation=False):
         super(TestDataset, self).__init__()
-        # TODO CHANGE IT SOMEWAY
+
         if is_validation:
             self.imgs = list(Path(data_path).rglob(f'imgs/*'))
         else:
             self.imgs = list(Path(data_path).rglob(f'*/imgs/*'))
+
         self.gt_imgs = [img_path.parent.parent / 'gt_imgs' / img_path.name for img_path in self.imgs]
 
         self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
