@@ -380,17 +380,26 @@ class LaMa(nn.Module):
                  init_conv_kwargs={}, downsample_conv_kwargs={}, resnet_conv_kwargs={},
                  spatial_transform_layers=None, spatial_transform_kwargs={},
                  add_out_act=True, max_features=1024, out_ffc=False, out_ffc_kwargs={}, use_convolutions=True,
-                 cross_attention='none', cross_attention_args=None, use_skip_connections=False):
+                 cross_attention='none', cross_attention_args=None, skip_connections='none', unet_layers=0):
         assert (n_blocks >= 0)
         super().__init__()
 
+        unet_layers_kwargs = dict(kernel_size=3, stride=1, padding=1)
+
         self.reflect = nn.ReflectionPad2d(3)
         down_sampling_out_channels = [ngf]
-        self.use_skip_connections = use_skip_connections
-        self.down_sampling_layers = [FFC_BN_ACT(input_nc, down_sampling_out_channels[-1],
-                                                kernel_size=7, padding=0, norm_layer=norm_layer,
-                                                activation_layer=activation_layer, use_convolutions=use_convolutions,
-                                                cross_attention='none', cross_attention_args=None, **init_conv_kwargs)]
+        self.skip_connections = skip_connections
+        layer = [FFC_BN_ACT(input_nc, down_sampling_out_channels[-1],
+                            kernel_size=7, padding=0, norm_layer=norm_layer,
+                            activation_layer=activation_layer, use_convolutions=use_convolutions,
+                            cross_attention='none', cross_attention_args=None, **init_conv_kwargs)]
+
+        for _ in range(unet_layers):
+            channels = down_sampling_out_channels[-1]
+            layer.append(FFC_BN_ACT(channels, channels, norm_layer=nn.Identity, activation_layer=activation_layer,
+                                  **init_conv_kwargs, **unet_layers_kwargs))
+
+        self.down_sampling_layers = [nn.Sequential(*layer)]
 
         self.resnet_layers = []
         self.up_sampling_layers = []
@@ -404,15 +413,21 @@ class LaMa(nn.Module):
             else:
                 cur_conv_kwargs = downsample_conv_kwargs
             down_sampling_out_channels.append(min(max_features, ngf * mult * 2))
-            self.down_sampling_layers += [FFC_BN_ACT(min(max_features, ngf * mult),
-                                                     down_sampling_out_channels[-1],
-                                                     kernel_size=3, stride=2, padding=1,
-                                                     norm_layer=norm_layer,
-                                                     activation_layer=activation_layer,
-                                                     use_convolutions=use_convolutions,
-                                                     cross_attention='none',
-                                                     cross_attention_args=None,
-                                                     **cur_conv_kwargs)]
+            layer = [FFC_BN_ACT(min(max_features, ngf * mult),
+                                down_sampling_out_channels[-1],
+                                kernel_size=3, stride=2, padding=1,
+                                norm_layer=norm_layer,
+                                activation_layer=activation_layer,
+                                use_convolutions=use_convolutions,
+                                cross_attention='none',
+                                cross_attention_args=None,
+                                **cur_conv_kwargs)]
+            if i < n_downsampling - 1:
+                for j in range(unet_layers):
+                    channels = down_sampling_out_channels[-1]
+                    layer.append(FFC_BN_ACT(channels, channels, norm_layer=nn.Identity, activation_layer=activation_layer,
+                                            **cur_conv_kwargs, **unet_layers_kwargs))
+            self.down_sampling_layers += [nn.Sequential(*layer)]
 
         mult = 2 ** n_downsampling
         feats_num_bottleneck = min(max_features, ngf * mult)
@@ -436,15 +451,18 @@ class LaMa(nn.Module):
             mult = 2 ** (n_downsampling - i)
 
             input_channels_num = min(max_features, ngf * mult)
-            input_channels_num += down_sampling_out_channels.pop() if use_skip_connections else 0
-            layer = nn.Sequential(
-                nn.ConvTranspose2d(input_channels_num,
-                                   min(max_features, int(ngf * mult / 2)),
-                                   kernel_size=3, stride=2, padding=1, output_padding=1),
-                up_norm_layer(min(max_features, int(ngf * mult / 2))),
-                up_activation
-            )
-            self.up_sampling_layers.append(layer)
+            input_channels_num += down_sampling_out_channels.pop() if skip_connections == 'cat' else 0
+            layer = [nn.ConvTranspose2d(input_channels_num,
+                                        min(max_features, int(ngf * mult / 2)),
+                                        kernel_size=3, stride=2, padding=1, output_padding=1),
+                     up_norm_layer(min(max_features, int(ngf * mult / 2))),
+                     up_activation
+                     ]
+            for _ in range(unet_layers):
+                channels = min(max_features, int(ngf * mult / 2))
+                layer.append(nn.Conv2d(channels, channels, **unet_layers_kwargs))
+                layer.append(nn.ReLU())
+            self.up_sampling_layers.append(nn.Sequential(*layer))
 
         if out_ffc:
             raise NotImplementedError
@@ -454,9 +472,14 @@ class LaMa(nn.Module):
             #                          **out_ffc_kwargs))
 
         input_channels_num = ngf
-        input_channels_num += down_sampling_out_channels.pop() if use_skip_connections else 0
-        layer = nn.Sequential(nn.ReflectionPad2d(3), nn.Conv2d(input_channels_num, output_nc, kernel_size=7, padding=0))
-        self.up_sampling_layers.append(layer)
+        input_channels_num += down_sampling_out_channels.pop() if skip_connections == 'cat' else 0
+        tmp_out = output_nc if unet_layers == 0 else input_channels_num
+        layer = [nn.ReflectionPad2d(3), nn.Conv2d(input_channels_num, tmp_out, kernel_size=7, padding=0)]
+        for j in range(unet_layers):
+            tmp_out = output_nc if j == unet_layers - 1 else input_channels_num
+            layer.append(nn.ReLU())
+            layer.append(nn.Conv2d(input_channels_num, tmp_out, kernel_size=3, stride=1, padding=1))
+        self.up_sampling_layers.append(nn.Sequential(*layer))
 
         self.final_act = get_activation('tanh' if add_out_act is True else add_out_act)
         self.resnet_layers = nn.Sequential(*self.resnet_layers)
@@ -468,15 +491,16 @@ class LaMa(nn.Module):
         intermediate_outputs = []
         for down_layer in self.down_sampling_layers:
             input = down_layer(input)
-            if self.use_skip_connections:
-                if type(input[1]) is not torch.Tensor:
-                    intermediate_outputs.append(input[0])
-                else:
-                    intermediate_outputs.append(torch.cat([*input], 1))
+            if self.skip_connections != 'none':
+                tmp_input = input if isinstance(input[1], torch.Tensor) else (input[0],)
+                intermediate_outputs.append(torch.cat(tmp_input, dim=1))
         input = self.resnet_layers(input)
         for up_layer in self.up_sampling_layers:
-            if self.use_skip_connections:
+            if self.skip_connections != 'none':
                 intermediate_output = intermediate_outputs.pop()
-                input = torch.cat([input, intermediate_output], dim=1)
+                if self.skip_connections == 'cat':
+                    input = torch.cat([input, intermediate_output], dim=1)
+                elif self.skip_connections == 'add':
+                    input = input + intermediate_output
             input = up_layer(input)
         return self.final_act(input)

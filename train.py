@@ -244,14 +244,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
-    parser.add_argument('--use_skip_connections', type=str, default='False', choices=['True', 'False'])
+    parser.add_argument('--skip', type=str, default='none', choices=['none', 'add', 'cat'])
+    parser.add_argument('--unet_layers', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
-    args.use_skip_connections = eval(args.use_skip_connections)
 
     config_filename = args.configuration
 
@@ -268,14 +268,16 @@ if __name__ == '__main__':
             str(args.n_blocks) + 'RB',
             str(train_config['train_patch_size']) + 'PS',
             args.attention + 'ATT',
-            'SKIP' if args.use_skip_connections else 'NO_SKIP',
+            args.skip + 'SKIP',
+            str(args.unet_layers) + 'UL',
             str(uuid.uuid4())[:4]
         ]
         args.experiment_name = '_'.join(exp_name)
 
     train_config['experiment_name'] = args.experiment_name
     train_config['use_convolutions'] = args.operation == 'conv'
-    train_config['use_skip_connections'] = args.use_skip_connections
+    train_config['skip_connections'] = args.skip
+    train_config['unet_layers'] = args.unet_layers
     train_config['n_blocks'] = args.n_blocks
     train_config['cross_attention'] = args.attention
     if args.attention == 'self':

@@ -50,7 +50,8 @@ class LaMaTrainingModule:
                           use_convolutions=config['use_convolutions'],
                           cross_attention=config['cross_attention'],
                           cross_attention_args=config['cross_attention_args'],
-                          use_skip_connections=config['use_skip_connections'])
+                          skip_connections=config['skip_connections'],
+                          unet_layers=config['unet_layers'],)
 
         config['num_params'] = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         # Training
