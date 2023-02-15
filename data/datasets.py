@@ -45,7 +45,10 @@ def make_val_dataset(config: dict, training_only_with_patch_square=False):
     val_data_path = config['valid_data_path']
     patch_size = config['valid_patch_size']
 
-    transform = transforms.Compose([CustomTransform.ToTensor()])
+    if training_only_with_patch_square:
+        transform = transforms.Compose([CustomTransform.ToTensor()])
+    else:
+        transform = transforms.Compose([transforms.ToTensor()])
 
     logger.info(f"Loading validation datasets...")
     time_start = time.time()

@@ -300,7 +300,7 @@ if __name__ == '__main__':
     train_config['valid_kwargs']['num_workers'] = args.num_workers
     train_config['test_kwargs']['num_workers'] = args.num_workers
     train_config['train_kwargs']['batch_size'] = args.batch_size
-    train_config['valid_kwargs']['batch_size'] = args.batch_size
+    train_config['valid_kwargs']['batch_size'] = 1
     train_config['test_kwargs']['batch_size'] = 1
 
     train_config['train_batch_size'] = train_config['train_kwargs']['batch_size']

@@ -16,6 +16,7 @@ class TestDataset(Dataset):
     def __init__(self, data_path, patch_size=256, stride=256, transform=None, is_validation=False):
         super(TestDataset, self).__init__()
 
+        self.is_validation = is_validation
         if is_validation:
             self.imgs = list(Path(data_path).rglob(f'imgs/*'))
         else:
