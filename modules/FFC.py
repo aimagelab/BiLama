@@ -396,7 +396,7 @@ class LaMa(nn.Module):
 
         for _ in range(unet_layers):
             channels = down_sampling_out_channels[-1]
-            layer.append(FFC_BN_ACT(channels, channels, norm_layer=nn.Identity, activation_layer=activation_layer,
+            layer.append(FFC_BN_ACT(channels, channels, norm_layer=norm_layer, activation_layer=activation_layer,
                                   **init_conv_kwargs, **unet_layers_kwargs))
 
         self.down_sampling_layers = [nn.Sequential(*layer)]
@@ -425,7 +425,7 @@ class LaMa(nn.Module):
             if i < n_downsampling - 1:
                 for j in range(unet_layers):
                     channels = down_sampling_out_channels[-1]
-                    layer.append(FFC_BN_ACT(channels, channels, norm_layer=nn.Identity, activation_layer=activation_layer,
+                    layer.append(FFC_BN_ACT(channels, channels, norm_layer=norm_layer, activation_layer=activation_layer,
                                             **cur_conv_kwargs, **unet_layers_kwargs))
             self.down_sampling_layers += [nn.Sequential(*layer)]
 
@@ -461,6 +461,7 @@ class LaMa(nn.Module):
             for _ in range(unet_layers):
                 channels = min(max_features, int(ngf * mult / 2))
                 layer.append(nn.Conv2d(channels, channels, **unet_layers_kwargs))
+                layer.append(nn.BatchNorm2d(channels))
                 layer.append(nn.ReLU())
             self.up_sampling_layers.append(nn.Sequential(*layer))
 
@@ -477,6 +478,7 @@ class LaMa(nn.Module):
         layer = [nn.ReflectionPad2d(3), nn.Conv2d(input_channels_num, tmp_out, kernel_size=7, padding=0)]
         for j in range(unet_layers):
             tmp_out = output_nc if j == unet_layers - 1 else input_channels_num
+            layer.append(nn.BatchNorm2d(input_channels_num))
             layer.append(nn.ReLU())
             layer.append(nn.Conv2d(input_channels_num, tmp_out, kernel_size=3, stride=1, padding=1))
         self.up_sampling_layers.append(nn.Sequential(*layer))
