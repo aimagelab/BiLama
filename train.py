@@ -244,6 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('--attention_num_heads', type=int, default=4)
     parser.add_argument('--attention_channel_scale_factor', type=int, default=1)
     parser.add_argument('--n_blocks', type=int, default=9)
+    parser.add_argument('--n_downsampling', type=int, default=3)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
@@ -282,6 +283,7 @@ if __name__ == '__main__':
     train_config['skip_connections'] = args.skip
     train_config['unet_layers'] = args.unet_layers
     train_config['n_blocks'] = args.n_blocks
+    train_config['n_downsampling'] = args.n_downsampling
     train_config['cross_attention'] = args.attention
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')

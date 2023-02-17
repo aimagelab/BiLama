@@ -506,3 +506,5 @@ class LaMa(nn.Module):
                     input = input + intermediate_output
             input = up_layer(input)
         return self.final_act(input)
+
+
