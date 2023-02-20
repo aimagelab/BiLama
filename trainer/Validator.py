@@ -3,17 +3,22 @@ from ignite.engine import Engine
 from ignite.metrics import PSNR, Precision, Recall
 
 
-def eval_step(engine, batch):
+def eval_step(engine, batch, apply_threshold=True, threshold=0.5):
     inputs, targets = batch
-    inputs = 1.0 - torch.where(inputs > 0.5, 1., 0.)
-    targets = 1.0 - torch.where(targets > 0.5, 1., 0.)
+    if apply_threshold:
+        inputs = torch.where(inputs > threshold, 1., 0.)
+        targets = torch.where(targets > threshold, 1., 0.)
+    inputs = 1.0 - inputs
+    targets = 1.0 - targets
 
     return inputs, targets
 
 
 class Validator:
-    def __init__(self):
+    def __init__(self, apply_threshold=True, threshold=0.5):
         self._evaluator = Engine(eval_step)
+        self.apply_threshold = apply_threshold
+        self.threshold = threshold
 
         self._psnr = PSNR(data_range=1.0)
         self._psnr.attach(self._evaluator, 'psnr')
@@ -30,7 +35,7 @@ class Validator:
         self._recall_value = 0.0
 
     def compute(self, predicts: torch.Tensor, targets: torch.Tensor):
-        state = self._evaluator.run([[predicts, targets]])
+        state = self._evaluator.run([[predicts, targets]], self.apply_threshold, self.threshold)
 
         self._count += len(predicts)
         self._psnr_value += state.metrics['psnr']

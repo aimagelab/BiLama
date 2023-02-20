@@ -106,11 +106,12 @@ class LaMaTrainingModule:
         self.train_data_loader.dataset.set_transforms(transforms)
 
     @torch.no_grad()
-    def test(self, threshold=0.5):
+    def test(self):
         test_loss = 0.0
+        threshold = self.config['threshold']
 
         images = {}
-        validator = Validator()
+        validator = Validator(self.config['apply_threshold_test'], threshold)
 
         for item in self.test_data_loader:
             image_name = item['image_name'][0]
@@ -149,11 +150,12 @@ class LaMaTrainingModule:
         return avg_psnr, avg_precision, avg_recall, avg_loss, images
 
     @torch.no_grad()
-    def validation(self, threshold=0.5):
+    def validation(self):
         valid_loss = 0.0
+        threshold = self.config['threshold']
 
         images = {}
-        validator = Validator()
+        validator = Validator(self.config['apply_threshold_validation'], threshold)
 
         for item in self.valid_data_loader:
             image_name = item['image_name'][0]

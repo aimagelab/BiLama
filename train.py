@@ -40,11 +40,12 @@ def train(config_args, config):
     if wandb_log:
         wandb_log.add_watch(trainer.model)
 
-    validator = Validator()
+    threshold = config['threshold'] if config['threshold'] else 0.5
+    train_validator = Validator(config['apply_threshold_train'], threshold)
 
     try:
         start_time = time.time()
-        threshold = config['threshold'] if config['threshold'] else 0.5
+
         patience = config['patience']
 
         for epoch in range(1, config['num_epochs']):
@@ -59,7 +60,7 @@ def train(config_args, config):
 
                 trainer.model.train()
 
-                validator.reset()
+                train_validator.reset()
                 data_times = []
                 train_times = []
 
@@ -86,7 +87,7 @@ def train(config_args, config):
                     train_times.append(time.time() - start_train_time)
 
                     with torch.no_grad():
-                        psnr, precision, recall = validator.compute(predictions, outputs)
+                        psnr, precision, recall = train_validator.compute(predictions, outputs)
 
                         if batch_idx % config['train_log_every'] == 0:
                             size = batch_idx * len(inputs)
@@ -105,7 +106,7 @@ def train(config_args, config):
                     start_data_time = time.time()
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
-                avg_train_psnr, avg_train_precision, avg_train_recall = validator.get_metrics()
+                avg_train_psnr, avg_train_precision, avg_train_recall = train_validator.get_metrics()
 
                 stdout = f"AVG training loss: {avg_train_loss:0.4f} - AVG training PSNR: {avg_train_psnr:0.4f}"
                 stdout += f" AVG training precision: {avg_train_precision:0.4f}%"
@@ -132,7 +133,7 @@ def train(config_args, config):
 
                 # Validation
                 trainer.model.eval()
-                validator.reset()
+                train_validator.reset()
 
                 with torch.no_grad():
                     start_test_time = time.time()
@@ -253,6 +254,8 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
+    parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test'])
+    parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
 
@@ -312,6 +315,24 @@ if __name__ == '__main__':
 
     train_config['num_epochs'] = args.epochs
     train_config['patience'] = args.patience
+
+    train_config['apply_threshold_to_train'] = args.apply_threshold_to
+    train_config['apply_threshold_to_valid'] = args.apply_threshold_to
+    train_config['apply_threshold_to_test'] = args.apply_threshold_to
+    train_config['threshold'] = args.threshold
+
+    train_config['apply_threshold_to_train'] = True
+    train_config['apply_threshold_to_valid'] = True
+    train_config['apply_threshold_to_test'] = True
+    if args.apply_threshold_to == 'none':
+        train_config['apply_threshold_to_train'] = False
+        train_config['apply_threshold_to_valid'] = False
+        train_config['apply_threshold_to_test'] = False
+    elif args.apply_threshold_to == 'val_test':
+        train_config['apply_threshold_to_train'] = False
+    elif args.apply_threshold_to == 'test':
+        train_config['apply_threshold_to_train'] = False
+        train_config['apply_threshold_to_valid'] = False
 
     set_seed(args.seed)
 
