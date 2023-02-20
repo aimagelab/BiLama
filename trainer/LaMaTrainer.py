@@ -39,7 +39,7 @@ class LaMaTrainingModule:
         self.training_only_with_patch_square = False
         if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
             self.training_only_with_patch_square = True
-        self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square, config['load_data'])
+        self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
         self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
         self.test_dataset = make_test_dataset(config)
         self.train_data_loader = make_train_dataloader(self.train_dataset, config)

@@ -258,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test', 'all'])
-    parser.add_argument('--load_data', type=str, default='false', choices=['true', 'false'])
+    parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     train_config['apply_threshold_to_valid'] = args.apply_threshold_to
     train_config['apply_threshold_to_test'] = args.apply_threshold_to
     train_config['threshold'] = args.threshold
-    train_config['load_data_ram'] = args.load_data_ram == 'true'
+    train_config['load_data'] = args.load_data == 'true'
 
     train_config['apply_threshold_to_train'] = True
     train_config['apply_threshold_to_valid'] = True

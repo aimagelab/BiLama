@@ -12,10 +12,11 @@ import data.CustomTransforms as CustomTransform
 logger = get_logger(__file__)
 
 
-def make_train_dataset(config: dict, training_only_with_patch_square=False, load_data=True):
+def make_train_dataset(config: dict, training_only_with_patch_square=False):
     train_data_path = config['train_data_path']
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
+    load_data = config['load_data']
 
     logger.info(f"Train path: \"{train_data_path}\"")
     logger.info(f"Transform Variant: {transform_variant} - Training Patch Size: {patch_size}")
@@ -42,9 +43,10 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False, load
     return train_dataset
 
 
-def make_val_dataset(config: dict, training_only_with_patch_square=False, load_data=True):
+def make_val_dataset(config: dict, training_only_with_patch_square=False):
     val_data_path = config['valid_data_path']
     patch_size = config['valid_patch_size']
+    load_data = config['load_data']
 
     if training_only_with_patch_square:
         transform = transforms.Compose([CustomTransform.ToTensor()])
