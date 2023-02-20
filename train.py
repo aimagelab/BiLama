@@ -275,6 +275,9 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test', 'all'])
+    parser.add_argument('--loss_kind', type=str, default='binary_cross_entropy',
+                        choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
+                                 'custom_mse', 'charbonnier'])
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -320,6 +323,7 @@ if __name__ == '__main__':
     train_config['n_blocks'] = args.n_blocks
     train_config['n_downsampling'] = args.n_downsampling
     train_config['cross_attention'] = args.attention
+    train_config['kind_loss'] = args.loss_kind
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
