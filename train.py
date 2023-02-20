@@ -309,6 +309,9 @@ if __name__ == '__main__':
             args.attention + 'ATT',
             args.skip + 'SKIP',
             str(args.unet_layers) + 'UL',
+            str(args.n_downsampling) + 'DS',
+            args.apply_threshold_to + 'TH',
+            str(args.threshold) + 'THR',
             str(uuid.uuid4())[:4]
         ]
         args.experiment_name = '_'.join(exp_name)
