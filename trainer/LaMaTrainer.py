@@ -111,7 +111,7 @@ class LaMaTrainingModule:
         threshold = self.config['threshold']
 
         images = {}
-        validator = Validator(self.config['apply_threshold_to_test'], threshold)
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_test'], threshold=threshold)
 
         for item in self.test_data_loader:
             image_name = item['image_name'][0]
@@ -145,9 +145,9 @@ class LaMaTrainingModule:
             images[image_name] = [test_img, pred_img, gt_test_img]
 
         avg_loss = test_loss / len(self.test_data_loader)
-        avg_psnr, avg_precision, avg_recall = validator.get_metrics()
+        avg_metrics = validator.get_metrics()
 
-        return avg_psnr, avg_precision, avg_recall, avg_loss, images
+        return avg_metrics, avg_loss, images
 
     @torch.no_grad()
     def validation(self):
@@ -155,7 +155,7 @@ class LaMaTrainingModule:
         threshold = self.config['threshold']
 
         images = {}
-        validator = Validator(self.config['apply_threshold_to_validation'], threshold)
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_valid'], threshold=threshold)
 
         for item in self.valid_data_loader:
             image_name = item['image_name'][0]
@@ -189,14 +189,14 @@ class LaMaTrainingModule:
             images[image_name] = [valid_img, pred_img, gt_test_img]
 
         avg_loss = valid_loss / len(self.valid_data_loader)
-        avg_psnr, avg_precision, avg_recall = validator.get_metrics()
+        avg_metrics = validator.get_metrics()
 
-        return avg_psnr, avg_precision, avg_recall, avg_loss, images
+        return avg_metrics, avg_loss, images
 
     @torch.no_grad()
     def validation_patch_square(self):
         valid_loss = 0.0
-        validator = Validator()
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_validation'], threshold=threshold)
 
         for batch_idx, (valid_in, valid_out) in enumerate(self.valid_data_loader):
             inputs, outputs = valid_in.to(self.device), valid_out.to(self.device)
@@ -209,5 +209,5 @@ class LaMaTrainingModule:
             valid_loss += loss.item()
 
         avg_loss = valid_loss / len(self.valid_data_loader)
-        avg_psnr, avg_precision, avg_recall = validator.get_metrics()
-        return avg_psnr, avg_precision, avg_recall, avg_loss,
+        avg_metrics = validator.get_metrics()
+        return avg_metrics, avg_loss,

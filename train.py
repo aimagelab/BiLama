@@ -41,7 +41,7 @@ def train(config_args, config):
         wandb_log.add_watch(trainer.model)
 
     threshold = config['threshold'] if config['threshold'] else 0.5
-    train_validator = Validator(config['apply_threshold_to_train'], threshold)
+    train_validator = Validator(apply_threshold=config['apply_threshold_to_train'], threshold=threshold)
 
     try:
         start_time = time.time()
@@ -87,7 +87,7 @@ def train(config_args, config):
                     train_times.append(time.time() - start_train_time)
 
                     with torch.no_grad():
-                        psnr, precision, recall = train_validator.compute(predictions, outputs)
+                        metrics = train_validator.compute(predictions, outputs)
 
                         if batch_idx % config['train_log_every'] == 0:
                             size = batch_idx * len(inputs)
@@ -98,9 +98,10 @@ def train(config_args, config):
                             remaining_time = (len(trainer.train_dataset) - size - 1) * time_per_iter
                             eta = str(timedelta(seconds=remaining_time))
 
-                            stdout = f"Train Loss: {loss.item():.6f} - PSNR: {psnr:0.4f} -"
-                            stdout += f" Precision: {precision:0.4f}% - Recall: {recall:0.4f}%"
-                            stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
+                            stdout = f"Train Loss: {loss.item():.6f} - PSNR: {metrics['psnr']:0.4f} -"
+                            if 'precision' in metrics and 'recall' in metrics:
+                                stdout += f" Precision: {metrics['precision']:0.4f}% - Recall: {metrics['recall']:0.4f}%"
+                                stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
                     start_data_time = time.time()
@@ -109,17 +110,19 @@ def train(config_args, config):
                         break
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
-                avg_train_psnr, avg_train_precision, avg_train_recall = train_validator.get_metrics()
+                avg_train_metrics = train_validator.get_metrics()
 
-                stdout = f"AVG training loss: {avg_train_loss:0.4f} - AVG training PSNR: {avg_train_psnr:0.4f}"
-                stdout += f" AVG training precision: {avg_train_precision:0.4f}%"
-                stdout += f" AVG training recall: {avg_train_recall:0.4f}%"
+                stdout = f"AVG training loss: {avg_train_loss:0.4f} - AVG training PSNR: {avg_train_metrics['psnr']:0.4f}"
+                if 'precision' in avg_train_metrics and 'recall' in avg_train_metrics:
+                    stdout += f" AVG training precision: {avg_train_metrics['precision']:0.4f}%"
+                    stdout += f" AVG training recall: {avg_train_metrics['recall']:0.4f}%"
                 logger.info(stdout)
 
                 wandb_logs['train_avg_loss'] = avg_train_loss
-                wandb_logs['train_avg_psnr'] = avg_train_psnr
-                wandb_logs['train_avg_precision'] = avg_train_precision
-                wandb_logs['train_avg_recall'] = avg_train_recall
+                wandb_logs['train_avg_psnr'] = avg_train_metrics['psnr']
+                if 'precision' in avg_train_metrics and 'recall' in avg_train_metrics:
+                    wandb_logs['train_avg_precision'] = avg_train_metrics['precision']
+                    wandb_logs['train_avg_recall'] = avg_train_metrics['recall']
                 wandb_logs['train_data_time'] = np.array(data_times).mean()
                 wandb_logs['train_time_per_iter'] = np.array(train_times).mean()
 
@@ -140,13 +143,14 @@ def train(config_args, config):
 
                 with torch.no_grad():
                     start_test_time = time.time()
-                    test_psnr, test_precision, test_recall, test_loss, images = trainer.test()
+                    test_metrics, test_loss, images = trainer.test()
 
                     wandb_logs['test_time'] = time.time() - start_test_time
                     wandb_logs['test_avg_loss'] = test_loss
-                    wandb_logs['test_avg_psnr'] = test_psnr
-                    wandb_logs['test_avg_precision'] = test_precision
-                    wandb_logs['test_avg_recall'] = test_recall
+                    wandb_logs['test_avg_psnr'] = test_metrics['psnr']
+                    if 'precision' in test_metrics and 'recall' in test_metrics:
+                        wandb_logs['test_avg_precision'] = test_metrics['precision']
+                        wandb_logs['test_avg_recall'] = test_metrics['recall']
 
                     name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
                     target_height = 512
@@ -160,22 +164,24 @@ def train(config_args, config):
 
                     start_valid_time = time.time()
                     if trainer.training_only_with_patch_square:
-                        valid_psnr, valid_precision, valid_recall, valid_loss = trainer.validation_patch_square()
+                        valid_metrics, valid_loss = trainer.validation_patch_square()
                     else:
-                        valid_psnr, valid_precision, valid_recall, valid_loss, images = trainer.validation()
+                        valid_metrics, valid_loss, images = trainer.validation()
 
                     wandb_logs['valid_time'] = time.time() - start_valid_time
                     wandb_logs['valid_avg_loss'] = valid_loss
-                    wandb_logs['valid_avg_psnr'] = valid_psnr
-                    wandb_logs['valid_avg_precision'] = valid_precision
-                    wandb_logs['valid_avg_recall'] = valid_recall
+                    wandb_logs['valid_avg_psnr'] = valid_metrics['psnr']
+                    if 'precision' in valid_metrics and 'recall' in valid_metrics:
+                        wandb_logs['valid_avg_precision'] = valid_metrics['precision']
+                        wandb_logs['valid_avg_recall'] = valid_metrics['recall']
                     wandb_logs['valid_patience'] = patience
 
-                    if valid_psnr > trainer.best_psnr:
+                    if valid_metrics['psnr'] > trainer.best_psnr:
                         patience = config['patience']
-                        trainer.best_psnr = valid_psnr
-                        trainer.best_precision = valid_precision
-                        trainer.best_recall = valid_recall
+                        trainer.best_psnr = valid_metrics['psnr']
+                        if 'precision' in valid_metrics and 'recall' in valid_metrics:
+                            trainer.best_precision = valid_metrics['precision']
+                            trainer.best_recall = valid_metrics['recall']
 
                         trainer.save_checkpoints(root_folder=config['path_checkpoint'],
                                                  filename=config_args.experiment_name)
@@ -193,14 +199,16 @@ def train(config_args, config):
                 wandb_logs['Best Precision'] = trainer.best_precision
                 wandb_logs['Best Recall'] = trainer.best_recall
 
-                stdout = f"Validation Loss: {valid_loss:.4f} - PSNR: {valid_psnr:.4f}"
-                stdout += f" Precision: {valid_precision:.4f}% - Recall: {valid_recall:.4f}%"
+                stdout = f"Validation Loss: {valid_loss:.4f} - PSNR: {valid_metrics['psnr']:.4f}"
+                if 'precision' in valid_metrics and 'recall' in valid_metrics:
+                    stdout += f" Precision: {valid_metrics['precision']:.4f}% - Recall: {valid_metrics['recall']:.4f}%"
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
 
-                stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_psnr:.4f}"
-                stdout += f" Precision: {test_precision:.4f}% - Recall: {test_recall:.4f}%"
-                stdout += f" Best Loss: {trainer.best_psnr:.3f}"
+                stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_metrics['psnr']:.4f}"
+                if 'precision' in test_metrics and 'recall' in test_metrics:
+                    stdout += f" Precision: {test_metrics['precision']:.4f}% - Recall: {test_metrics['recall']:.4f}%"
+                    stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
 
                 trainer.epoch += 1
@@ -212,7 +220,7 @@ def train(config_args, config):
                     wandb_log.on_log(wandb_logs)
 
                 if patience == 0:
-                    stdout = "There has been no update of Best PSNR value in the last 30 epochs."
+                    stdout = f"There has been no update of Best PSNR value in the last {config['patience']} epochs."
                     stdout += " Training will be stopped."
                     logger.info(stdout)
                     sys.exit()
