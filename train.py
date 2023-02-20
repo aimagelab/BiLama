@@ -177,7 +177,11 @@ def train(config_args, config):
                         wandb_logs['valid_avg_recall'] = valid_metrics['recall']
                     wandb_logs['valid_patience'] = patience
 
+                    trainer.psnr_list.append(valid_metrics['psnr'])
                     psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
+                    if valid_metrics['psnr'] > trainer.best_psnr:
+                        trainer.best_psnr = valid_metrics['psnr']
+
                     if valid_metrics['psnr'] > psnr_running_mean:
                         patience = config['patience']
                         trainer.best_psnr = valid_metrics['psnr']
