@@ -21,14 +21,15 @@ def rewrite_logs(dictionary: dict):
 
 class WandbLog(object):
 
-    def __init__(self, experiment_name: str, project="BiLaMa", entity="fomo_aiisdh", tags=()):
+    def __init__(self, experiment_name: str, project="BiLaMa", entity="fomo_aiisdh", tags=(), dir='/tmp', id=wandb.util.generate_id()):
         self._wandb = wandb
         self._initialized = False
         self._project = project
         self._entity = entity
         self._experiment_name = experiment_name
-        self._dir = '/tmp'
+        self._dir = dir
         self._tags = tags
+        self._id = id
 
     def setup(self, config):
         if self._wandb is None:
@@ -38,7 +39,7 @@ class WandbLog(object):
         # Configuration
         if self._wandb.run is None:
             self._wandb.init(project=self._project, entity=self._entity, name=self._experiment_name, dir=self._dir,
-                             config=config, tags=self._tags)
+                             config=config, tags=self._tags, id=self._id, resume="allow")
 
         # Set up the wandb metrics
         self._wandb.define_metric('test/avg_precision', summary='max')

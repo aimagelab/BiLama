@@ -1,6 +1,8 @@
 import errno
 import math
 import os
+import wandb
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -35,6 +37,11 @@ class LaMaTrainingModule:
 
         self.config = config
         self.device = device
+        self.checkpoint = None
+
+        if 'resume' in self.config:
+            self.checkpoint = torch.load(config['resume'])
+            self.config = self.checkpoint['config'] if 'config' in self.checkpoint else self.config
 
         self.training_only_with_patch_square = False
         if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
@@ -61,8 +68,16 @@ class LaMaTrainingModule:
         self.epoch = 0
         self.num_epochs = config['num_epochs']
         self.learning_rate = config['learning_rate']
+
+        if self.checkpoint is not None:
+            self.model.load_state_dict(self.checkpoint['model'], strict=True)
+            self.epoch = self.checkpoint['epoch']
+            self.best_psnr = self.checkpoint['best_psnr']
+            self.learning_rate = self.checkpoint['learning_rate']
+
+        self.model = self.model.to(self.device)
         self.optimizer = make_optimizer(self.model, self.learning_rate, config['kind_optimizer'], config['optimizer'])
-        self.criterion = make_criterion(kind=config['kind_loss']).to(device=device)
+        self.criterion = make_criterion(kind=config['kind_loss'])
 
         # Validation
         self.best_epoch = 0
@@ -72,6 +87,13 @@ class LaMaTrainingModule:
 
         # Logging
         self.logger = get_logger(LaMaTrainingModule.__name__)
+
+        # Resume
+        if self.checkpoint is not None:
+            self.optimizer.load_state_dict(self.checkpoint['optimizer'])
+            self.logger.info(f"Loaded pretrained checkpoint model from \"{config['resume']}\"")
+
+        # self.criterion = self.criterion.to(self.device)
 
     def load_checkpoints(self, folder: str, filename: str):
         checkpoints_path = f"{folder}{filename}_best_psnr.pth"
@@ -88,17 +110,23 @@ class LaMaTrainingModule:
         self.learning_rate = checkpoint['learning_rate']
         self.logger.info(f"Loaded pretrained checkpoint model from \"{checkpoints_path}\"")
 
-    def save_checkpoints(self, root_folder: str, filename: str):
-        os.makedirs(root_folder, exist_ok=True)
+    def save_checkpoints(self, filename: str):
+        root_folder = Path(self.config['path_checkpoint'])
+        root_folder.mkdir(parents=True, exist_ok=True)
+
         checkpoint = {
             'model': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'epoch': self.epoch,
             'best_psnr': self.best_psnr,
             'learning_rate': self.learning_rate,
+            'config': self.config
         }
 
-        dir_path = root_folder + f"{filename}_best_psnr.pth"
+        if wandb.run is not None:
+            checkpoint['wandb_id'] = wandb.run.id
+
+        dir_path = root_folder / f"{filename}.pth"
         torch.save(checkpoint, dir_path)
         self.logger.info(f"Stored checkpoints {dir_path}")
 
