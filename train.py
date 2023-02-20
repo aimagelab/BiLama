@@ -336,7 +336,7 @@ if __name__ == '__main__':
     train_config['n_blocks'] = args.n_blocks
     train_config['n_downsampling'] = args.n_downsampling
     train_config['cross_attention'] = args.attention
-    train_config['kind_loss'] = args.loss
+    train_config['kind_loss'] = args.loss_kind
     train_config['kind_lr_scheduler'] = args.lr_scheduler
     train_config['lr_scheduler_kwargs'] = args.lr_scheduler_kwargs
     if args.attention == 'self':
