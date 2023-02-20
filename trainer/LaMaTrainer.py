@@ -97,7 +97,7 @@ class LaMaTrainingModule:
 
         self.optimizer = make_optimizer(self.model, self.learning_rate, config['kind_optimizer'], config['optimizer'])
         self.criterion = make_criterion(kind=config['kind_loss'])
-        self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer)
+        self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'])
 
         # Validation
         self.best_epoch = 0
@@ -112,6 +112,9 @@ class LaMaTrainingModule:
         # Resume
         if self.checkpoint is not None:
             self.optimizer.load_state_dict(self.checkpoint['optimizer'])
+            self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer,
+                                                  config['lr_scheduler_kwargs'])
+            self.lr_scheduler.load_state_dict(self.checkpoint['lr_scheduler'])
             self.logger.info(f"Loaded pretrained checkpoint model from \"{config['resume']}\"")
 
         # self.criterion = self.criterion.to(self.device)
@@ -161,13 +164,14 @@ class LaMaTrainingModule:
         checkpoint = {
             'model': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
-            'epoch': self.epoch,
+            'epoch': self.epoch + 1,
             'best_psnr': self.best_psnr,
             'learning_rate': self.learning_rate,
             'config': self.config,
             'random_settings': random_settings,
             'ema_rates': self.ema_rates,
-            'ema_parameters': self.ema_parameters if self.ema_rates else None
+            'ema_parameters': self.ema_parameters if self.ema_rates else None,
+            'lr_scheduler': self.lr_scheduler.state_dict()
         }
 
         if wandb.run is not None:
