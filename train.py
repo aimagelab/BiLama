@@ -311,7 +311,7 @@ if __name__ == '__main__':
     train_config['test_batch_size'] = train_config['test_kwargs']['batch_size']
 
     train_config['num_epochs'] = args.epochs
-    train_config['patience'] = 60
+    train_config['patience'] = args.patience
 
     set_seed(args.seed)
 
