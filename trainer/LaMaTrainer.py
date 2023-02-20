@@ -16,6 +16,7 @@ from data.utils import reconstruct_ground_truth
 from modules.FFC import LaMa
 from trainer.Losses import make_criterion
 from trainer.Optimizers import make_optimizer
+from trainer.Schedulers import make_lr_scheduler
 from trainer.Validator import Validator
 from utils.htr_logging import get_logger
 
@@ -79,6 +80,7 @@ class LaMaTrainingModule:
         self.model = self.model.to(self.device)
         self.optimizer = make_optimizer(self.model, self.learning_rate, config['kind_optimizer'], config['optimizer'])
         self.criterion = make_criterion(kind=config['kind_loss'])
+        self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer)
 
         # Validation
         self.best_epoch = 0
