@@ -45,7 +45,7 @@ def train(config_args, config):
     try:
         start_time = time.time()
         threshold = config['threshold'] if config['threshold'] else 0.5
-        patience = 30
+        patience = config['patience']
 
         for epoch in range(1, config['num_epochs']):
             wandb_logs = dict()
@@ -168,7 +168,7 @@ def train(config_args, config):
                     wandb_logs['valid_patience'] = patience
 
                     if valid_psnr > trainer.best_psnr:
-                        patience = 30
+                        patience = config['patience']
                         trainer.best_psnr = valid_psnr
                         trainer.best_precision = valid_precision
                         trainer.best_recall = valid_recall
@@ -252,6 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('--unet_layers', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
+    parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
 
@@ -310,6 +311,7 @@ if __name__ == '__main__':
     train_config['test_batch_size'] = train_config['test_kwargs']['batch_size']
 
     train_config['num_epochs'] = args.epochs
+    train_config['patience'] = 60
 
     set_seed(args.seed)
 
