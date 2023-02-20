@@ -13,7 +13,7 @@ import wandb
 import yaml
 from torchvision.transforms import functional
 
-from trainer.LaMaTrainer import LaMaTrainingModule
+from trainer.LaMaTrainer import LaMaTrainingModule, set_seed
 from trainer.Validator import Validator
 from utils.WandbLog import WandbLog
 from utils.htr_logging import get_logger, DEBUG
@@ -81,6 +81,7 @@ def train(config_args, config):
                     loss.backward()
                     trainer.optimizer.step()
                     trainer.lr_scheduler.step()
+                    trainer.update_ema()
 
                     train_loss += loss.item()
 
@@ -92,6 +93,7 @@ def train(config_args, config):
                     train_times.append(time.time() - start_train_time)
 
                     with torch.no_grad():
+
                         metrics = train_validator.compute(predictions, outputs)
 
                         if batch_idx % config['train_log_every'] == 0:
@@ -147,6 +149,16 @@ def train(config_args, config):
                 with torch.no_grad():
                     start_test_time = time.time()
                     test_metrics, test_loss, images = trainer.test()
+
+                    if config['ema_rates']:
+                        ema_test_metrics, ema_test_loss, ema_images = trainer.test_ema()
+
+                        for i, rate in enumerate(trainer.ema_rates):
+                            wandb_logs[f'test_avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
+                            if 'precision' in ema_test_metrics[i] and 'recall' in ema_test_metrics[i]:
+                                wandb_logs[f'test_avg_ema_{rate}_precision'] = ema_test_metrics[i]['precision']
+                                wandb_logs[f'test_avg_ema_{rate}_recall'] = ema_test_metrics[i]['recall']
+                            wandb_logs[f'test_avg_ema_{rate}_loss'] = ema_test_loss[i]
 
                     wandb_logs['test_time'] = time.time() - start_test_time
                     wandb_logs['test_avg_loss'] = test_loss
@@ -244,11 +256,7 @@ def train(config_args, config):
         exit()
 
 
-def set_seed(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+
 
 
 if __name__ == '__main__':
@@ -281,6 +289,7 @@ if __name__ == '__main__':
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier'])
     parser.add_argument('--lr_scheduler_kind', type=str, default='constant', choices=['constant', 'exponential'])
+    parser.add_argument('--ema_rates', type=str, default=None)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -354,6 +363,8 @@ if __name__ == '__main__':
 
     train_config['num_epochs'] = args.epochs
     train_config['patience'] = args.patience
+    args.ema_rates = [float(r) for r in args.ema_rates.split(",")] if args.ema_rates else None
+    train_config['ema_rates'] = args.ema_rates
 
     train_config['apply_threshold_to_train'] = args.apply_threshold_to
     train_config['apply_threshold_to_valid'] = args.apply_threshold_to
