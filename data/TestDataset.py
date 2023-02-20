@@ -13,7 +13,7 @@ class TestPatchSquare(Dataset):
 
 class TestDataset(Dataset):
 
-    def __init__(self, data_path, patch_size=256, stride=256, transform=None, is_validation=False):
+    def __init__(self, data_path, patch_size=256, stride=256, transform=None, is_validation=False, load_data=True):
         super(TestDataset, self).__init__()
 
         self.is_validation = is_validation
@@ -24,8 +24,11 @@ class TestDataset(Dataset):
 
         self.gt_imgs = [img_path.parent.parent / 'gt_imgs' / img_path.name for img_path in self.imgs]
 
-        self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
-        self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
+        self.load_data = load_data
+        if self.load_data:
+            self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
+            self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
+
         self.patch_size = patch_size
         self.stride = stride
         self.transform = transform
@@ -34,8 +37,12 @@ class TestDataset(Dataset):
         return len(self.imgs)
 
     def __getitem__(self, index):
-        sample = self.imgs[index]
-        gt_sample = self.gt_imgs[index]
+        if self.load_data:
+            sample = self.imgs[index]
+            gt_sample = self.gt_imgs[index]
+        else:
+            sample = Image.open(self.imgs[index]).convert("RGB")
+            gt_sample = Image.open(self.gt_imgs[index]).convert("L")
 
         # Create patches
         padding_bottom = ((sample.height // self.patch_size) + 1) * self.patch_size - sample.height

@@ -12,7 +12,7 @@ import data.CustomTransforms as CustomTransform
 logger = get_logger(__file__)
 
 
-def make_train_dataset(config: dict, training_only_with_patch_square=False):
+def make_train_dataset(config: dict, training_only_with_patch_square=False, load_data=True):
     train_data_path = config['train_data_path']
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
@@ -31,7 +31,8 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
             patch_square_path = Path(path) / 'train' if training_only_with_patch_square else Path(path)
             datasets.append(TrainPatchSquare(patch_square_path, transform=transform))
         else:
-            datasets.append(TrainingDataset(Path(path) / 'train', split_size=patch_size, transform=transform))
+            datasets.append(
+                TrainingDataset(Path(path) / 'train', split_size=patch_size, transform=transform, load_data=load_data))
     logger.info(f"Loading train datasets took {time.time() - time_start:.2f} seconds")
 
     train_dataset = ConcatDataset(datasets)
@@ -41,7 +42,7 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
     return train_dataset
 
 
-def make_val_dataset(config: dict, training_only_with_patch_square=False):
+def make_val_dataset(config: dict, training_only_with_patch_square=False, load_data=True):
     val_data_path = config['valid_data_path']
     patch_size = config['valid_patch_size']
 
@@ -66,7 +67,8 @@ def make_val_dataset(config: dict, training_only_with_patch_square=False):
                     patch_size=patch_size,
                     stride=stride,
                     transform=transform,
-                    is_validation=True
+                    is_validation=True,
+                    load_data=load_data
                 )
             )
     logger.info(f"Loading validation datasets took {time.time() - time_start:.2f} seconds")
@@ -82,6 +84,7 @@ def make_test_dataset(config: dict):
     test_data_path = config['test_data_path']
     patch_size = config['test_patch_size']
     stride = config['test_stride']
+    load_data = config['load_data']
 
     transform = transforms.Compose([transforms.ToTensor()])
 
@@ -93,7 +96,14 @@ def make_test_dataset(config: dict):
             datasets.append(ValidationPatchSquare(path, transform=transform))
         else:
             datasets.append(
-                TestDataset(path, patch_size=patch_size, stride=stride, transform=transform, is_validation=False))
+                TestDataset(
+                    data_path=path,
+                    patch_size=patch_size,
+                    stride=stride,
+                    transform=transform,
+                    is_validation=False,
+                    load_data=load_data))
+
     logger.info(f"Loading test datasets took {time.time() - time_start:.2f} seconds")
 
     test_dataset = ConcatDataset(datasets)
