@@ -111,7 +111,7 @@ class LaMaTrainingModule:
         threshold = self.config['threshold']
 
         images = {}
-        validator = Validator(self.config['apply_threshold_test'], threshold)
+        validator = Validator(self.config['apply_threshold_to_test'], threshold)
 
         for item in self.test_data_loader:
             image_name = item['image_name'][0]
@@ -155,7 +155,7 @@ class LaMaTrainingModule:
         threshold = self.config['threshold']
 
         images = {}
-        validator = Validator(self.config['apply_threshold_validation'], threshold)
+        validator = Validator(self.config['apply_threshold_to_validation'], threshold)
 
         for item in self.valid_data_loader:
             image_name = item['image_name'][0]

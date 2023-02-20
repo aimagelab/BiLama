@@ -41,7 +41,7 @@ def train(config_args, config):
         wandb_log.add_watch(trainer.model)
 
     threshold = config['threshold'] if config['threshold'] else 0.5
-    train_validator = Validator(config['apply_threshold_train'], threshold)
+    train_validator = Validator(config['apply_threshold_to_train'], threshold)
 
     try:
         start_time = time.time()
@@ -104,6 +104,9 @@ def train(config_args, config):
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
                     start_data_time = time.time()
+
+                    if batch_idx == 2:
+                        break
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_psnr, avg_train_precision, avg_train_recall = train_validator.get_metrics()
