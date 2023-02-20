@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #SBATCH --gres=gpu:1
 #SBATCH --partition=prod
@@ -9,19 +8,21 @@
 
 source activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
-scontrol update JobID="$SLURM_JOB_ID" name="bilama_@{n_blocks}_@{operation}_@{att}_SKIP@{skip}_patch"
-srun python3 train.py -c base --n_blocks @{n_blocks|9} \
-              --operation "@{operation|ffc}" --attention @{att|none} --num_workers 2 --epochs 500 --skip @{skip} --unet_layers @{unet} \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO09 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO10 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO11 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO12 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO13 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO14 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO16 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO17 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO19 \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DirtyDocuments \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/PALM \
+scontrol update JobID="$SLURM_JOB_ID" name="bilama_@{n_blocks}_@{operation}_@{att}_SKIP@{skip}"
+srun python3 train.py -c base --n_blocks @{n_blocks|6} \
+              --operation "@{operation|ffc}" --attention @{att|none} --num_workers 2 --epochs 500 --skip @{skip|none} --unet_layers @{unet|0} \
+              --train_data_path \
+              /scratch/fquattrini/binarization_datasets/DIBCO09 \
+              /scratch/fquattrini/binarization_datasets/DIBCO10 \
+              /scratch/fquattrini/binarization_datasets/DIBCO11 \
+              /scratch/fquattrini/binarization_datasets/DIBCO12 \
+              /scratch/fquattrini/binarization_datasets/DIBCO13 \
+              /scratch/fquattrini/binarization_datasets/DIBCO14 \
+              /scratch/fquattrini/binarization_datasets/DIBCO16 \
+              /scratch/fquattrini/binarization_datasets/DIBCO17 \
+              /scratch/fquattrini/binarization_datasets/DirtyDocuments \
+              /scratch/fquattrini/binarization_datasets/PALM \
               --test_data_path \
-              /mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO18
+              /scratch/fquattrini/binarization_datasets/DIBCO18
+
+            #   /scratch/fquattrini/binarization_datasets/DIBCO19 \

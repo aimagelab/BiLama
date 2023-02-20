@@ -27,15 +27,19 @@ assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to ru
 
 def train(config_args, config):
     wandb_log = None
+
     trainer = LaMaTrainingModule(config, device=device)
 
     if config_args.use_wandb:  # Configure WandB
         tags = [Path(path).name for path in config_args.train_data_path]
-        wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags)
+        wandb_id = wandb.util.generate_id()
+        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint:
+            wandb_id = trainer.checkpoint['wandb_id']
+        wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags,
+                             dir=config_args.wandb_dir, id=wandb_id)
         wandb_log.setup(config)
 
-    if torch.cuda.is_available():
-        trainer.model.cuda()
+    trainer.model.to(device)
 
     if wandb_log:
         wandb_log.add_watch(trainer.model)
@@ -181,8 +185,7 @@ def train(config_args, config):
                             trainer.best_precision = valid_metrics['precision']
                             trainer.best_recall = valid_metrics['recall']
 
-                        trainer.save_checkpoints(root_folder=config['path_checkpoint'],
-                                                 filename=config_args.experiment_name)
+                        trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr')
 
                         # Save images
                         # names = images.keys()
@@ -191,6 +194,7 @@ def train(config_args, config):
                         #              names=names, images=predicted_images)
                     else:
                         patience -= 1
+                    trainer.save_checkpoints(filename=config_args.experiment_name)
 
                 # Log best values
                 wandb_logs['Best PSNR'] = trainer.best_psnr
@@ -260,6 +264,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
     parser.add_argument('--skip', type=str, default='none', choices=['none', 'add', 'cat'])
+    parser.add_argument('--resume', type=str, default='none')
+    parser.add_argument('--wandb_dir', type=str, default='/tmp')
     parser.add_argument('--unet_layers', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
@@ -280,6 +286,13 @@ if __name__ == '__main__':
 
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
+
+    if args.resume != 'none':
+        checkpoint_path = Path(train_config['path_checkpoint'])
+        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
+        assert 1 <= len(checkpoints) <= 2, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
+        train_config['resume'] = checkpoints[0]
+        args.experiment_name = checkpoints[0].stem
 
     if args.experiment_name is None:
         exp_name = [
