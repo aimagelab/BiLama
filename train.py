@@ -173,7 +173,8 @@ def train(config_args, config):
                         wandb_logs['valid_avg_recall'] = valid_metrics['recall']
                     wandb_logs['valid_patience'] = patience
 
-                    if valid_metrics['psnr'] > trainer.best_psnr:
+                    psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
+                    if valid_metrics['psnr'] > psnr_running_mean:
                         patience = config['patience']
                         trainer.best_psnr = valid_metrics['psnr']
                         if 'precision' in valid_metrics and 'recall' in valid_metrics:
@@ -193,6 +194,7 @@ def train(config_args, config):
 
                 # Log best values
                 wandb_logs['Best PSNR'] = trainer.best_psnr
+                wandb_logs['Psnr Running Mean'] = psnr_running_mean
                 wandb_logs['Best Precision'] = trainer.best_precision
                 wandb_logs['Best Recall'] = trainer.best_recall
 

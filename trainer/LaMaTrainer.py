@@ -67,6 +67,7 @@ class LaMaTrainingModule:
         # Validation
         self.best_epoch = 0
         self.best_psnr = 0.
+        self.psnr_list = []
         self.best_precision = 0.
         self.best_recall = 0.
 
