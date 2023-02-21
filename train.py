@@ -326,8 +326,11 @@ if __name__ == '__main__':
             str(args.n_downsampling) + 'DS',
             args.apply_threshold_to + 'TH',
             str(args.threshold) + 'THR',
+            args.loss_kind[:4] + 'LOSS',
+            args.lr_scheduler[:4] + 'SCHE',
             str(uuid.uuid4())[:4]
         ]
+        if args.ema_rate > 0: exp_name.insert(-1, f"{args.ema_rate}EMA")
         args.experiment_name = '_'.join(exp_name)
 
     train_config['experiment_name'] = args.experiment_name
