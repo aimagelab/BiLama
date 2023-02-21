@@ -7,7 +7,7 @@ def make_lr_scheduler(kind: str, optimizer: torch.optim.Optimizer, kwargs: dict)
     elif kind == 'exponential':
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, **kwargs)
     elif kind == 'multistep':
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **kwargs)
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[50,80,90,95,100], **kwargs)
     elif kind == 'cosine':
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, **kwargs)
     elif kind == 'linear':

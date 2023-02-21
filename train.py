@@ -288,9 +288,10 @@ if __name__ == '__main__':
     parser.add_argument('--loss_kind', type=str, default='binary_cross_entropy',
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier'])
+    parser.add_argument('--lr', type=int, default=1.5e-4)
     parser.add_argument('--lr_scheduler', type=str, default='constant', choices=['constant', 'exponential', 'multistep', 'linear', 'cosine'])
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
-    parser.add_argument('--ema_rates', type=str, default=None)
+    parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -312,7 +313,7 @@ if __name__ == '__main__':
         checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
         assert 1 <= len(checkpoints) <= 2, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
-        args.experiment_name = checkpoints[0].stem
+        args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
 
     if args.experiment_name is None:
         exp_name = [
@@ -339,6 +340,8 @@ if __name__ == '__main__':
     train_config['kind_loss'] = args.loss_kind
     train_config['kind_lr_scheduler'] = args.lr_scheduler
     train_config['lr_scheduler_kwargs'] = args.lr_scheduler_kwargs
+    train_config['learning_rate'] = args.lr
+    train_config['seed'] = args.seed
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
     train_config['train_data_path'] = args.train_data_path
@@ -365,8 +368,7 @@ if __name__ == '__main__':
 
     train_config['num_epochs'] = args.epochs
     train_config['patience'] = args.patience
-    args.ema_rates = [float(r) for r in args.ema_rates.split(",")] if args.ema_rates else None
-    train_config['ema_rates'] = args.ema_rates
+    train_config['ema_rates'] = [args.ema_rate] if args.ema_rate > 0 else None
 
     train_config['apply_threshold_to_train'] = args.apply_threshold_to
     train_config['apply_threshold_to_valid'] = args.apply_threshold_to
