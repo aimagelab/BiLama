@@ -4,7 +4,7 @@
 #SBATCH -e /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_%j.err
 #SBATCH -o /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_%j.out
 #SBATCH -J bilama
-#SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
+#SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio,germano,gervasoni,pippobaudo,rezzonico,ajeje,helmut,lurcanio
 
 source activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit

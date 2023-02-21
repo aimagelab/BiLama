@@ -1,0 +1,4 @@
+u_net,operation,attention,skip
+0,ffc,none,cat
+1,ffc,none,cat
+2,ffc,none,cat

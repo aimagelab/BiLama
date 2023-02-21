@@ -1,0 +1,17 @@
+﻿operation,att,skip,unet,sche,sche_kwargs,loss,apply_thres,thres,n_down,load_data,resume,ema_rates,n_blocks
+ffc,none,cat,0,constant,{},binary_cross_entropy,all,0.5,3,true,71d7,-1,6
+ffc,none,cat,1,constant,{},binary_cross_entropy,all,0.5,3,true,91da,-1,6
+ffc,none,cat,2,constant,{},binary_cross_entropy,all,0.5,3,true,e1ae,-1,6
+ffc,none,cat,2,constant,{},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,constant,{},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,constant,{},charbonnier,test,0.5,3,true,none,-1,6
+ffc,none,add,0,constant,{},mean_square_error,test,0.5,3,true,none,-1,6
+ffc,none,add,0,exponential,{'gamma':0.9},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,exponential,{'gamma':0.95},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,exponential,{'gamma':0.99},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,multistep,{'gamma':0.5},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,multistep,{'gamma':0.1},binary_cross_entropy,test,0.5,3,true,none,-1,6
+ffc,none,add,0,constant,{},binary_cross_entropy,test,0.5,3,true,none,0.99,6
+ffc,none,add,0,constant,{},binary_cross_entropy,test,0.5,3,true,none,0.999,6
+ffc,none,add,0,constant,{},binary_cross_entropy,test,0.5,3,true,none,0.9999,6
+ffc,none,add,0,constant,{},binary_cross_entropy,test,0.5,1,true,none,-1,6
