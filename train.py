@@ -157,7 +157,6 @@ def train(config_args, config):
                         ema_test_metrics, ema_test_loss, ema_images = trainer.test_ema()
 
                         for i, rate in enumerate(trainer.ema_rates):
-                            print(f'EMA rate: {rate}')
                             wandb_logs[f'test_avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
                             if 'precision' in ema_test_metrics[i] and 'recall' in ema_test_metrics[i]:
                                 wandb_logs[f'test_avg_ema_{rate}_precision'] = ema_test_metrics[i]['precision']
@@ -199,10 +198,9 @@ def train(config_args, config):
                     psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     if valid_metrics['psnr'] > trainer.best_psnr:
                         trainer.best_psnr = valid_metrics['psnr']
-
-                    if valid_metrics['psnr'] > psnr_running_mean:
+                    if valid_metrics['psnr'] > trainer.best_psnr_running_mean:
+                        trainer.best_psnr_running_mean = psnr_running_mean
                         patience = config['patience']
-                        trainer.best_psnr = valid_metrics['psnr']
                         if 'precision' in valid_metrics and 'recall' in valid_metrics:
                             trainer.best_precision = valid_metrics['precision']
                             trainer.best_recall = valid_metrics['recall']
@@ -221,6 +219,7 @@ def train(config_args, config):
                 # Log best values
                 wandb_logs['Best PSNR'] = trainer.best_psnr
                 wandb_logs['Psnr Running Mean'] = psnr_running_mean
+                wandb_logs['Best PSNR Running Mean'] = trainer.best_psnr_running_mean
                 wandb_logs['Best Precision'] = trainer.best_precision
                 wandb_logs['Best Recall'] = trainer.best_recall
 
