@@ -113,9 +113,6 @@ def train(config_args, config):
                             logger.info(stdout)
                     start_data_time = time.time()
 
-                    if batch_idx == 3:
-                        break
-
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_metrics = train_validator.get_metrics()
 
