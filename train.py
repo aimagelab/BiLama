@@ -113,6 +113,9 @@ def train(config_args, config):
                             logger.info(stdout)
                     start_data_time = time.time()
 
+                    if batch_idx == 3:
+                        break
+
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_metrics = train_validator.get_metrics()
 
@@ -122,7 +125,7 @@ def train(config_args, config):
                     stdout += f" AVG training recall: {avg_train_metrics['recall']:0.4f}%"
                 logger.info(stdout)
 
-                wandb_logs['train_learning_rate'] = trainer.lr_scheduler.get_last_lr()
+                wandb_logs['train_learning_rate'] = trainer.lr_scheduler.get_last_lr()[0]
                 wandb_logs['train_avg_loss'] = avg_train_loss
                 wandb_logs['train_avg_psnr'] = avg_train_metrics['psnr']
                 if 'precision' in avg_train_metrics and 'recall' in avg_train_metrics:
@@ -154,6 +157,7 @@ def train(config_args, config):
                         ema_test_metrics, ema_test_loss, ema_images = trainer.test_ema()
 
                         for i, rate in enumerate(trainer.ema_rates):
+                            print(f'EMA rate: {rate}')
                             wandb_logs[f'test_avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
                             if 'precision' in ema_test_metrics[i] and 'recall' in ema_test_metrics[i]:
                                 wandb_logs[f'test_avg_ema_{rate}_precision'] = ema_test_metrics[i]['precision']
