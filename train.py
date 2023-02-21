@@ -285,7 +285,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test', 'all'])
-    parser.add_argument('--loss_kind', type=str, default='binary_cross_entropy',
+    parser.add_argument('--loss', type=str, default='binary_cross_entropy',
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier'])
     parser.add_argument('--lr', type=int, default=1.5e-4)
@@ -326,7 +326,7 @@ if __name__ == '__main__':
             str(args.n_downsampling) + 'DS',
             args.apply_threshold_to + 'TH',
             str(args.threshold) + 'THR',
-            args.loss_kind[:4] + 'LOSS',
+            args.loss[:4] + 'LOSS',
             args.lr_scheduler[:4] + 'SCHE',
             str(uuid.uuid4())[:4]
         ]
@@ -340,7 +340,7 @@ if __name__ == '__main__':
     train_config['n_blocks'] = args.n_blocks
     train_config['n_downsampling'] = args.n_downsampling
     train_config['cross_attention'] = args.attention
-    train_config['kind_loss'] = args.loss_kind
+    train_config['kind_loss'] = args.loss
     train_config['kind_lr_scheduler'] = args.lr_scheduler
     train_config['lr_scheduler_kwargs'] = args.lr_scheduler_kwargs
     train_config['learning_rate'] = args.lr

@@ -16,6 +16,7 @@ srun python3 train.py -c base --n_blocks @{n_blocks|6} \
               --lr_scheduler @{sche} --lr_scheduler_kwargs "@{sche_kwargs}" \
               --load_data @{load_data} --resume @{resume} \
               --n_downsampling @{n_down} --ema_rate "@{ema_rates}" \
+              --loss @{loss} \
               --train_data_path \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \
