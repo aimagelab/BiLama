@@ -195,7 +195,7 @@ def train(config_args, config):
                     psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     if valid_metrics['psnr'] > trainer.best_psnr:
                         trainer.best_psnr = valid_metrics['psnr']
-                    if valid_metrics['psnr'] > trainer.best_psnr_running_mean:
+                    if psnr_running_mean > trainer.best_psnr_running_mean:
                         trainer.best_psnr_running_mean = psnr_running_mean
                         patience = config['patience']
                         if 'precision' in valid_metrics and 'recall' in valid_metrics:
