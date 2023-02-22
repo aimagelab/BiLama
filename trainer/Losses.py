@@ -1,21 +1,40 @@
 import torch
 
+class MultiLoss(torch.nn.Module):
+    def __init__(self, losses=[], weights=[]):
+        super().__init__()
+        self.losses = losses
+        self.weights = weights
 
-def make_criterion(kind: str):
-    if kind == 'mean_square_error':
-        criterion = torch.nn.MSELoss()
-    elif kind == 'cross_entropy':
-        criterion = torch.nn.CrossEntropyLoss()
-    elif kind == 'negative_log_likelihood':
-        criterion = torch.nn.NLLLoss()
-    elif kind == 'binary_cross_entropy':
-        criterion = torch.nn.BCEWithLogitsLoss()
-    elif kind == 'custom_mse':
-        criterion = LMSELoss()
-    elif kind == 'charbonnier':
-        criterion = CharbonnierLoss()
-    else:
-        raise ValueError(f"Unknown kind of criterion: {kind}")
+    def add_loss(self, loss, weight=1.0):
+        self.losses.append(loss)
+        self.weights.append(weight)
+
+    def __len__(self):
+        return len(self.losses)
+
+    def forward(self, inputs, targets):
+        loss = 0
+        for criterion, weight in zip(self.losses, self.weights):
+            loss += weight * criterion(inputs, targets)
+        return loss / len(self.losses)
+
+def make_criterion(losses: str):
+    criterion = MultiLoss()
+    loss_dict = {
+        'mean_square_error': (torch.nn.MSELoss(), 1.0),
+        'cross_entropy': (torch.nn.CrossEntropyLoss(), 1.0),
+        'negative_log_likelihood': (torch.nn.NLLLoss(), 1.0),
+        'binary_cross_entropy': (torch.nn.BCEWithLogitsLoss(), 1.0),
+        'custom_mse': (LMSELoss(), 1.0),
+        'charbonnier': (CharbonnierLoss(), 4.0),
+    }
+    for loss in losses:
+        if loss in loss_dict:
+            criterion.add_loss(*loss_dict[loss])
+        else:
+            raise ValueError(f"Unknown kind of criterion: {loss}")
+    assert len(criterion) > 0, "Criterion is empty"
     return criterion
 
 
