@@ -290,7 +290,7 @@ if __name__ == '__main__':
     parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test', 'all'])
     parser.add_argument('--loss', type=str, default='binary_cross_entropy',
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
-                                 'custom_mse', 'charbonnier'])
+                                 'custom_mse', 'charbonnier', 'binary_cross_entropy'])
     parser.add_argument('--lr', type=int, default=1.5e-4)
     parser.add_argument('--lr_scheduler', type=str, default='constant', choices=['constant', 'exponential', 'multistep', 'linear', 'cosine'])
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
