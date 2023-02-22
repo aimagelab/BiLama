@@ -108,6 +108,7 @@ def train(config_args, config):
                             stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
+
                     start_data_time = time.time()
 
                 avg_train_loss = train_loss / len(trainer.train_dataset)
@@ -147,20 +148,29 @@ def train(config_args, config):
                     start_test_time = time.time()
                     test_metrics, test_loss, _ = trainer.test()
 
-                    if config['ema_rates']:
-                        ema_test_metrics, ema_test_loss, _ = trainer.test_ema()
+                    if trainer.ema_rate:
+                        trainer.load_ema()
+                        ema_valid_metrics, ema_valid_loss, _ = trainer.validation()
+                        ema_test_metrics, ema_test_loss, _ = trainer.test()
+                        trainer.load_model()
 
-                        for i, rate in enumerate(trainer.ema_rates):
-                            wandb_logs[f'test/avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
-                            wandb_logs[f'test/avg_ema_{rate}_loss'] = ema_test_loss[i]
+                        wandb_logs[f'test/avg_ema_{trainer.ema_rate}_psnr'] = ema_test_metrics['psnr']
+                        wandb_logs[f'test/avg_ema_{trainer.ema_rate}_loss'] = ema_test_loss
+
+                        if ema_test_metrics['psnr'] > trainer.ema_best_psnr_test:
+                            trainer.ema_best_psnr_test = ema_test_metrics['psnr']
+                            wandb_logs[f'test/best_ema_{trainer.ema_rate}_psnr'] = trainer.ema_best_psnr_test
+                            trainer.save_checkpoints(filename=config_args.experiment_name + f'_best_psnr_test')
 
                     wandb_logs['test/time'] = time.time() - start_test_time
                     wandb_logs['test/avg_loss'] = test_loss
                     wandb_logs['test/avg_psnr'] = test_metrics['psnr']
+
                     if test_metrics['psnr'] > trainer.best_psnr_test:
                         trainer.best_psnr_test = test_metrics['psnr']
                         wandb_logs['test/best_psnr'] = trainer.best_psnr_test
-                        trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr_test')
+                        if not trainer.ema_rate:
+                            trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr_test')
 
                     # name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
                     # target_height = 512
@@ -178,23 +188,49 @@ def train(config_args, config):
                     ##########################################
 
                     start_valid_time = time.time()
-                    valid_metrics, valid_loss, _ = trainer.validation(trainer.training_only_with_patch_square)
+                    valid_metrics, valid_loss, _ = trainer.validation()
 
                     wandb_logs['valid/time'] = time.time() - start_valid_time
                     wandb_logs['valid/avg_loss'] = valid_loss
                     wandb_logs['valid/avg_psnr'] = valid_metrics['psnr']
                     wandb_logs['valid/patience'] = patience
 
-                    trainer.psnr_list.append(valid_metrics['psnr'])
-                    psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     if valid_metrics['psnr'] > trainer.best_psnr:
                         trainer.best_psnr = valid_metrics['psnr']
                         wandb_logs['test/best_psnr_wrt_valid'] = wandb_logs['test/avg_psnr']
 
+                    trainer.psnr_list.append(valid_metrics['psnr'])
+                    psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     if psnr_running_mean > trainer.best_psnr_running_mean:
                         trainer.best_psnr_running_mean = psnr_running_mean
+                        reset_patience = True
+                    wandb_logs['Best PSNR Running Mean'] = trainer.best_psnr_running_mean
+                    wandb_logs['Psnr Running Mean'] = psnr_running_mean
+                    wandb_logs['Best PSNR'] = trainer.best_psnr
+
+                    if trainer.ema_rate:
+                        reset_patience = False
+                        if ema_valid_metrics['psnr'] > trainer.ema_best_psnr:
+                            trainer.ema_best_psnr = ema_valid_metrics['psnr']
+                            wandb_logs['test/best_ema_psnr_wrt_ema_valid'] = wandb_logs[
+                                f'test/avg_ema_{trainer.ema_rate}_psnr']
+                            wandb_logs['Best EMA PSNR'] = trainer.ema_best_psnr
+
+                        trainer.ema_psnr_list.append(ema_valid_metrics['psnr'])
+                        ema_psnr_running_mean = sum(trainer.ema_psnr_list[-3:]) / len(trainer.ema_psnr_list[-3:])
+                        wandb_logs['Psnr EMA Running Mean'] = ema_psnr_running_mean
+                        if ema_psnr_running_mean > trainer.ema_best_psnr_running_mean:
+                            trainer.ema_best_psnr_running_mean = ema_psnr_running_mean
+                            reset_patience = True
+                        wandb_logs['Best EMA PSNR Running Mean'] = trainer.ema_best_psnr_running_mean
+
+                    if reset_patience:
                         patience = config['patience']
+
                         wandb_logs['test/best_psnr_running_mean_wrt_valid'] = wandb_logs['test/avg_psnr']
+                        if trainer.ema_rate:
+                            wandb_logs['test/best_ema_psnr_running_mean_wrt_ema_valid'] = wandb_logs[
+                                f'test/avg_ema_{trainer.ema_rate}_psnr']
 
                         logger.info(f"Saving best model (valid) with valid_PSNR: {trainer.best_psnr:.02f}" +
                                     f" and test_PSNR: {trainer.best_psnr_running_mean:.02f}...")
@@ -214,9 +250,6 @@ def train(config_args, config):
                 #                 Generic                #
                 ##########################################
 
-                wandb_logs['Best PSNR'] = trainer.best_psnr
-                wandb_logs['Psnr Running Mean'] = psnr_running_mean
-                wandb_logs['Best PSNR Running Mean'] = trainer.best_psnr_running_mean
                 trainer.epoch += 1
                 wandb_logs['epoch'] = trainer.epoch
                 wandb_logs['epoch_time'] = time.time() - start_epoch_time
@@ -364,7 +397,7 @@ if __name__ == '__main__':
 
     train_config['num_epochs'] = args.epochs
     train_config['patience'] = args.patience
-    train_config['ema_rates'] = [args.ema_rate] if args.ema_rate > 0 else None
+    train_config['ema_rate'] = args.ema_rate if args.ema_rate > 0 else None
 
     train_config['apply_threshold_to_train'] = args.apply_threshold_to
     train_config['apply_threshold_to_valid'] = args.apply_threshold_to
