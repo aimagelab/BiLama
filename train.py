@@ -54,7 +54,7 @@ def train(config_args, config):
 
         for epoch in range(1, config['num_epochs']):
             wandb_logs = dict()
-
+            wandb_logs['lr'] = trainer.lr_scheduler.get_last_lr()[0]
             if config_args.train:
                 logger.info("Training has been started") if epoch == 1 else None
                 logger.info(f"Epoch {trainer.epoch} of {trainer.num_epochs}")
