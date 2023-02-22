@@ -54,7 +54,7 @@ def train(config_args, config):
 
         for epoch in range(1, config['num_epochs']):
             wandb_logs = dict()
-            wandb_logs['lr'] = trainer.lr_scheduler.get_last_lr()[0]
+            wandb_logs['lr'] = trainer.optimizer.param_groups[0]['lr']
             if config_args.train:
                 logger.info("Training has been started") if epoch == 1 else None
                 logger.info(f"Epoch {trainer.epoch} of {trainer.num_epochs}")
@@ -80,7 +80,6 @@ def train(config_args, config):
                     loss = trainer.criterion(predictions, outputs)
                     loss.backward()
                     trainer.optimizer.step()
-                    trainer.lr_scheduler.step()
                     trainer.update_ema()
 
                     train_loss += loss.item()
@@ -121,7 +120,6 @@ def train(config_args, config):
                 stdout = f"AVG training loss: {avg_train_loss:0.4f} - AVG training PSNR: {avg_train_metrics['psnr']:0.4f}"
                 logger.info(stdout)
 
-                wandb_logs['train/learning_rate'] = trainer.lr_scheduler.get_last_lr()[0]
                 wandb_logs['train/avg_loss'] = avg_train_loss
                 wandb_logs['train/avg_psnr'] = avg_train_metrics['psnr']
                 wandb_logs['train/data_time'] = np.array(data_times).mean()
@@ -232,6 +230,8 @@ def train(config_args, config):
                 logger.info(stdout)
                 logger.info('-' * 75)
 
+                trainer.lr_scheduler.step(psnr_running_mean)
+
                 if wandb_log:
                     wandb_log.on_log(wandb_logs)
 
@@ -273,16 +273,18 @@ if __name__ == '__main__':
     parser.add_argument('--resume', type=str, default='none')
     parser.add_argument('--wandb_dir', type=str, default='/tmp')
     parser.add_argument('--unet_layers', type=int, default=0)
-    parser.add_argument('--epochs', type=int, default=150)
+    parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--apply_threshold_to', type=str, default='test', choices=['none', 'val_test', 'test', 'all'])
     parser.add_argument('--loss', type=str, nargs='+', default=['binary_cross_entropy'],
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier', 'binary_cross_entropy'])
-    parser.add_argument('--lr', type=int, default=1.5e-4)
+    parser.add_argument('--lr', type=float, default=1.5e-4)
+    parser.add_argument('--lr_min', type=float, default=1.5e-5)
     parser.add_argument('--lr_scheduler', type=str, default='constant',
-                        choices=['constant', 'exponential', 'multistep', 'linear', 'cosine'])
+                        choices=['constant', 'exponential', 'multistep', 'linear', 'cosine', 'plateau', 'step'])
+    parser.add_argument('--lr_scheduler_warmup', type=int, default=0)
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
@@ -315,7 +317,7 @@ if __name__ == '__main__':
             args.skip + 'SKIP',
             str(args.unet_layers) + 'UL',
             str(args.n_downsampling) + 'DS',
-            args.loss[:4] + 'LOSS',
+            '+'.join(l[:4] for l in args.loss) + 'LOSS',
             args.lr_scheduler[:4] + 'SCHE',
             str(uuid.uuid4())[:4]
         ]
@@ -330,9 +332,11 @@ if __name__ == '__main__':
     train_config['n_downsampling'] = args.n_downsampling
     train_config['cross_attention'] = args.attention
     train_config['losses'] = args.loss
-    train_config['kind_lr_scheduler'] = args.lr_scheduler
+    train_config['lr_scheduler'] = args.lr_scheduler
     train_config['lr_scheduler_kwargs'] = args.lr_scheduler_kwargs
+    train_config['lr_scheduler_warmup'] = args.lr_scheduler_warmup
     train_config['learning_rate'] = args.lr
+    train_config['learning_rate_min'] = args.lr_min
     train_config['seed'] = args.seed
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')

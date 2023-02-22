@@ -97,7 +97,8 @@ class LaMaTrainingModule:
 
         self.optimizer = make_optimizer(self.model, self.learning_rate, config['kind_optimizer'], config['optimizer'])
         self.criterion = make_criterion(losses=config['losses'])
-        self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'])
+        self.lr_scheduler = make_lr_scheduler(config['lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'],
+                                              config['lr_scheduler_warmup'], config)
 
         # Validation
         self.best_epoch = 0
@@ -115,8 +116,8 @@ class LaMaTrainingModule:
         if self.checkpoint is not None:
             self.optimizer.load_state_dict(self.checkpoint['optimizer'])
             if 'lr_scheduler' in self.checkpoint:
-                self.lr_scheduler = make_lr_scheduler(config['kind_lr_scheduler'], self.optimizer,
-                                                      config['lr_scheduler_kwargs'])
+                self.lr_scheduler = make_lr_scheduler(config['lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'],
+                                                      config['lr_scheduler_warmup'], config)
                 self.lr_scheduler.load_state_dict(self.checkpoint['lr_scheduler'])
             self.logger.info(f"Loaded pretrained checkpoint model from \"{config['resume']}\"")
 
