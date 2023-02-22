@@ -101,9 +101,10 @@ class LaMaTrainingModule:
 
         # Validation
         self.best_epoch = 0
-        self.best_psnr = 0.
         self.psnr_list = []
+        self.best_psnr = 0.
         self.best_psnr_running_mean = 0.
+        self.best_psnr_test = 0.
         self.best_precision = 0.
         self.best_recall = 0.
 
@@ -247,7 +248,8 @@ class LaMaTrainingModule:
         return avg_metrics, avg_loss, images
 
     @torch.no_grad()
-    def validation(self):
+    def validation(self, patch_square=False):
+        if patch_square: return self.validation_patch_square()
         valid_loss = 0.0
         threshold = self.config['threshold']
 
@@ -308,4 +310,4 @@ class LaMaTrainingModule:
 
         avg_loss = valid_loss / len(self.valid_data_loader)
         avg_metrics = validator.get_metrics()
-        return avg_metrics, avg_loss,
+        return avg_metrics, avg_loss, None

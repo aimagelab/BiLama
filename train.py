@@ -106,9 +106,7 @@ def train(config_args, config):
                             eta = str(timedelta(seconds=remaining_time))
 
                             stdout = f"Train Loss: {loss.item():.6f} - PSNR: {metrics['psnr']:0.4f} -"
-                            if 'precision' in metrics and 'recall' in metrics:
-                                stdout += f" Precision: {metrics['precision']:0.4f}% - Recall: {metrics['recall']:0.4f}%"
-                                stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
+                            stdout += f" \t[{size} / {len(trainer.train_dataset)}]"
                             stdout += f" ({percentage:.2f}%)  Epoch eta: {eta}"
                             logger.info(stdout)
                     start_data_time = time.time()
@@ -116,20 +114,18 @@ def train(config_args, config):
                 avg_train_loss = train_loss / len(trainer.train_dataset)
                 avg_train_metrics = train_validator.get_metrics()
 
+                ##########################################
+                #                  Train                 #
+                ##########################################
+
                 stdout = f"AVG training loss: {avg_train_loss:0.4f} - AVG training PSNR: {avg_train_metrics['psnr']:0.4f}"
-                if 'precision' in avg_train_metrics and 'recall' in avg_train_metrics:
-                    stdout += f" AVG training precision: {avg_train_metrics['precision']:0.4f}%"
-                    stdout += f" AVG training recall: {avg_train_metrics['recall']:0.4f}%"
                 logger.info(stdout)
 
-                wandb_logs['train_learning_rate'] = trainer.lr_scheduler.get_last_lr()[0]
-                wandb_logs['train_avg_loss'] = avg_train_loss
-                wandb_logs['train_avg_psnr'] = avg_train_metrics['psnr']
-                if 'precision' in avg_train_metrics and 'recall' in avg_train_metrics:
-                    wandb_logs['train_avg_precision'] = avg_train_metrics['precision']
-                    wandb_logs['train_avg_recall'] = avg_train_metrics['recall']
-                wandb_logs['train_data_time'] = np.array(data_times).mean()
-                wandb_logs['train_time_per_iter'] = np.array(train_times).mean()
+                wandb_logs['train/learning_rate'] = trainer.lr_scheduler.get_last_lr()[0]
+                wandb_logs['train/avg_loss'] = avg_train_loss
+                wandb_logs['train/avg_psnr'] = avg_train_metrics['psnr']
+                wandb_logs['train/data_time'] = np.array(data_times).mean()
+                wandb_logs['train/time_per_iter'] = np.array(train_times).mean()
 
                 original = inputs[0]
                 pred = predictions[0].expand(3, -1, -1)
@@ -142,7 +138,10 @@ def train(config_args, config):
                 # rescaled = torch.clamp(rescaled, min=0., max=1.)
                 # wandb_logs['Errors'] = wandb.Image(functional.to_pil_image(rescaled))
 
-                # Validation
+                ##########################################
+                #                  Test                  #
+                ##########################################
+
                 trainer.model.eval()
                 train_validator.reset()
 
@@ -154,57 +153,53 @@ def train(config_args, config):
                         ema_test_metrics, ema_test_loss, ema_images = trainer.test_ema()
 
                         for i, rate in enumerate(trainer.ema_rates):
-                            wandb_logs[f'test_avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
-                            if 'precision' in ema_test_metrics[i] and 'recall' in ema_test_metrics[i]:
-                                wandb_logs[f'test_avg_ema_{rate}_precision'] = ema_test_metrics[i]['precision']
-                                wandb_logs[f'test_avg_ema_{rate}_recall'] = ema_test_metrics[i]['recall']
-                            wandb_logs[f'test_avg_ema_{rate}_loss'] = ema_test_loss[i]
+                            wandb_logs[f'test/avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
+                            wandb_logs[f'test/avg_ema_{rate}_loss'] = ema_test_loss[i]
 
-                    wandb_logs['test_time'] = time.time() - start_test_time
-                    wandb_logs['test_avg_loss'] = test_loss
-                    wandb_logs['test_avg_psnr'] = test_metrics['psnr']
-                    if 'precision' in test_metrics and 'recall' in test_metrics:
-                        wandb_logs['test_avg_precision'] = test_metrics['precision']
-                        wandb_logs['test_avg_recall'] = test_metrics['recall']
+                    wandb_logs['test/time'] = time.time() - start_test_time
+                    wandb_logs['test/avg_loss'] = test_loss
+                    wandb_logs['test/avg_psnr'] = test_metrics['psnr']
+                    if test_metrics['psnr'] > trainer.best_psnr_test:
+                        trainer.best_psnr_test = test_metrics['psnr']
+                        wandb_logs['test/best_psnr'] = trainer.best_psnr_test
+                        trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr_test')
 
-                    name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
-                    target_height = 512
-                    test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
-                    pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
-                    gt_test_img = gt_test_img.resize((target_height, int(target_height * gt_test_img.height / gt_test_img.width)))
+                    # name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
+                    # target_height = 512
+                    # test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
+                    # pred_img = pred_img.resize((target_height, int(target_height * pred_img.height / pred_img.width)))
+                    # gt_test_img = gt_test_img.resize(
+                    #     (target_height, int(target_height * gt_test_img.height / gt_test_img.width)))
+                    # wandb_logs['test/results'] = [wandb.Image(test_img, caption=f"Sample: {name_image}"),
+                    #                               wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
+                    #                               wandb.Image(gt_test_img,
+                    #                                           caption=f"Ground Truth Sample: {name_image}")]
 
-                    wandb_logs['test_results'] = [wandb.Image(test_img, caption=f"Sample: {name_image}"),
-                                             wandb.Image(pred_img, caption=f"Predicted Sample: {name_image}"),
-                                             wandb.Image(gt_test_img, caption=f"Ground Truth Sample: {name_image}")]
+                    ##########################################
+                    #               Validation               #
+                    ##########################################
 
                     start_valid_time = time.time()
-                    if trainer.training_only_with_patch_square:
-                        valid_metrics, valid_loss = trainer.validation_patch_square()
-                    else:
-                        valid_metrics, valid_loss, images = trainer.validation()
+                    valid_metrics, valid_loss, _ = trainer.validation(trainer.training_only_with_patch_square)
 
-                    wandb_logs['valid_time'] = time.time() - start_valid_time
-                    wandb_logs['valid_avg_loss'] = valid_loss
-                    wandb_logs['valid_avg_psnr'] = valid_metrics['psnr']
-                    if 'precision' in valid_metrics and 'recall' in valid_metrics:
-                        wandb_logs['valid_avg_precision'] = valid_metrics['precision']
-                        wandb_logs['valid_avg_recall'] = valid_metrics['recall']
-                    wandb_logs['valid_patience'] = patience
+                    wandb_logs['valid/time'] = time.time() - start_valid_time
+                    wandb_logs['valid/avg_loss'] = valid_loss
+                    wandb_logs['valid/avg_psnr'] = valid_metrics['psnr']
+                    wandb_logs['valid/patience'] = patience
 
                     trainer.psnr_list.append(valid_metrics['psnr'])
                     psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     if valid_metrics['psnr'] > trainer.best_psnr:
                         trainer.best_psnr = valid_metrics['psnr']
-                        wandb_logs['test_best_psnr_wrt_valid'] = wandb_logs['test_avg_psnr']
+                        wandb_logs['test/best_psnr_wrt_valid'] = wandb_logs['test/avg_psnr']
 
                     if psnr_running_mean > trainer.best_psnr_running_mean:
                         trainer.best_psnr_running_mean = psnr_running_mean
                         patience = config['patience']
-                        wandb_logs['test_best_psnr_running_mean_wrt_valid'] = wandb_logs['test_avg_psnr']
-                        if 'precision' in valid_metrics and 'recall' in valid_metrics:
-                            trainer.best_precision = valid_metrics['precision']
-                            trainer.best_recall = valid_metrics['recall']
+                        wandb_logs['test/best_psnr_running_mean_wrt_valid'] = wandb_logs['test/avg_psnr']
 
+                        logger.info(f"Saving best model (valid) with valid_PSNR: {trainer.best_psnr:.02f}" +
+                                    f" and test_PSNR: {trainer.best_psnr_running_mean:.02f}...")
                         trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr')
 
                         # Save images
@@ -214,30 +209,27 @@ def train(config_args, config):
                         #              names=names, images=predicted_images)
                     else:
                         patience -= 1
+                    logger.info(f"Saving model...")
                     trainer.save_checkpoints(filename=config_args.experiment_name)
 
-                # Log best values
+                ##########################################
+                #                 Generic                #
+                ##########################################
+
                 wandb_logs['Best PSNR'] = trainer.best_psnr
                 wandb_logs['Psnr Running Mean'] = psnr_running_mean
                 wandb_logs['Best PSNR Running Mean'] = trainer.best_psnr_running_mean
-                wandb_logs['Best Precision'] = trainer.best_precision
-                wandb_logs['Best Recall'] = trainer.best_recall
+                trainer.epoch += 1
+                wandb_logs['epoch'] = trainer.epoch
+                wandb_logs['epoch_time'] = time.time() - start_epoch_time
 
                 stdout = f"Validation Loss: {valid_loss:.4f} - PSNR: {valid_metrics['psnr']:.4f}"
-                if 'precision' in valid_metrics and 'recall' in valid_metrics:
-                    stdout += f" Precision: {valid_metrics['precision']:.4f}% - Recall: {valid_metrics['recall']:.4f}%"
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
 
                 stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_metrics['psnr']:.4f}"
-                if 'precision' in test_metrics and 'recall' in test_metrics:
-                    stdout += f" Precision: {test_metrics['precision']:.4f}% - Recall: {test_metrics['recall']:.4f}%"
-                    stdout += f" Best Loss: {trainer.best_psnr:.3f}"
+                stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
-
-                trainer.epoch += 1
-                wandb_logs['epoch'] = trainer.epoch
-                wandb_logs['epoch_time'] = time.time() - start_epoch_time
                 logger.info('-' * 75)
 
                 if wandb_log:
@@ -257,9 +249,6 @@ def train(config_args, config):
     finally:
         logger.info("Training finished")
         exit()
-
-
-
 
 
 if __name__ == '__main__':
@@ -292,7 +281,8 @@ if __name__ == '__main__':
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier', 'binary_cross_entropy'])
     parser.add_argument('--lr', type=int, default=1.5e-4)
-    parser.add_argument('--lr_scheduler', type=str, default='constant', choices=['constant', 'exponential', 'multistep', 'linear', 'cosine'])
+    parser.add_argument('--lr_scheduler', type=str, default='constant',
+                        choices=['constant', 'exponential', 'multistep', 'linear', 'cosine'])
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
@@ -314,7 +304,7 @@ if __name__ == '__main__':
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
         checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
-        assert 1 <= len(checkpoints) <= 2, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
+        assert len(checkpoints) > 1, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
         args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
 

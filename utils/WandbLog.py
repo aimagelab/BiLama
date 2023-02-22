@@ -62,5 +62,5 @@ class WandbLog(object):
         self._wandb.watch(model, log="all")
 
     def on_log(self, logs=None):
-        logs = rewrite_logs(logs)
+        # logs = rewrite_logs(logs)
         self._wandb.log(logs)
