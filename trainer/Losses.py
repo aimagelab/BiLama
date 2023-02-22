@@ -1,10 +1,10 @@
 import torch
 
 class MultiLoss(torch.nn.Module):
-    def __init__(self, losses=[], weights=[]):
+    def __init__(self):
         super().__init__()
-        self.losses = losses
-        self.weights = weights
+        self.losses = []
+        self.weights = []
 
     def add_loss(self, loss, weight=1.0):
         self.losses.append(loss)
