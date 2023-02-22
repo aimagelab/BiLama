@@ -147,10 +147,10 @@ def train(config_args, config):
 
                 with torch.no_grad():
                     start_test_time = time.time()
-                    test_metrics, test_loss, images = trainer.test()
+                    test_metrics, test_loss, _ = trainer.test()
 
                     if config['ema_rates']:
-                        ema_test_metrics, ema_test_loss, ema_images = trainer.test_ema()
+                        ema_test_metrics, ema_test_loss, _ = trainer.test_ema()
 
                         for i, rate in enumerate(trainer.ema_rates):
                             wandb_logs[f'test/avg_ema_{rate}_psnr'] = ema_test_metrics[i]['psnr']
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=150)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
-    parser.add_argument('--apply_threshold_to', type=str, default='all', choices=['none', 'val_test', 'test', 'all'])
+    parser.add_argument('--apply_threshold_to', type=str, default='test', choices=['none', 'val_test', 'test', 'all'])
     parser.add_argument('--loss', type=str, default='binary_cross_entropy',
                         choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
                                  'custom_mse', 'charbonnier', 'binary_cross_entropy'])
@@ -312,13 +312,9 @@ if __name__ == '__main__':
         exp_name = [
             args.operation.upper(),
             str(args.n_blocks) + 'RB',
-            str(train_config['train_patch_size']) + 'PS',
-            args.attention + 'ATT',
             args.skip + 'SKIP',
             str(args.unet_layers) + 'UL',
             str(args.n_downsampling) + 'DS',
-            args.apply_threshold_to + 'TH',
-            str(args.threshold) + 'THR',
             args.loss[:4] + 'LOSS',
             args.lr_scheduler[:4] + 'SCHE',
             str(uuid.uuid4())[:4]
