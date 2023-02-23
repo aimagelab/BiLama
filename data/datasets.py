@@ -71,16 +71,18 @@ def make_val_dataset(config: dict, training_only_with_patch_square=False):
                 datasets.append(ValidationPatchSquare(Path(path) / 'eval', transform=transform))
         else:
             stride = config['test_stride']
-            datasets.append(
-                TestDataset(
-                    data_path=Path(path) / 'eval',
-                    patch_size=patch_size,
-                    stride=stride,
-                    transform=transform,
-                    is_validation=True,
-                    load_data=load_data
+            data_path = Path(path) / 'eval' if (Path(path) / 'eval').exists() else None
+            if data_path:
+                datasets.append(
+                    TestDataset(
+                        data_path=Path(path) / 'eval',
+                        patch_size=patch_size,
+                        stride=stride,
+                        transform=transform,
+                        is_validation=True,
+                        load_data=load_data
+                    )
                 )
-            )
     logger.info(f"Loading validation datasets took {time.time() - time_start:.2f} seconds")
 
     validation_dataset = ConcatDataset(datasets)
