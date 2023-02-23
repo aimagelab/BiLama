@@ -33,9 +33,10 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
             patch_square_path = Path(path) / 'train' if training_only_with_patch_square else Path(path)
             datasets.append(TrainPatchSquare(patch_square_path, transform=transform))
         else:
+            data_path = Path(path) / 'train' if (Path(path) / 'train').exists() else Path(path)
             datasets.append(
                 TrainingDataset(
-                    data_path=Path(path) / 'train',
+                    data_path=data_path,
                     split_size=patch_size,
                     transform=transform,
                     load_data=load_data,
