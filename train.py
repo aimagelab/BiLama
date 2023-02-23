@@ -322,7 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
-    parser.add_argument('--merge_image', type=str, default='false', choices=['true', 'false'])
+    parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
