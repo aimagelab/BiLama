@@ -322,6 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
+    parser.add_argument('--train_transform_variant', type=str, default='none', choices=['threshold_mask', 'none'])
     parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
@@ -393,6 +394,7 @@ if __name__ == '__main__':
     train_config['train_kwargs']['batch_size'] = args.batch_size
     train_config['valid_kwargs']['batch_size'] = 1
     train_config['test_kwargs']['batch_size'] = 1
+    train_config['train_transform_variant'] = args.train_transform_variant if args.train_transform_variant != 'none' else None
 
     train_config['train_batch_size'] = train_config['train_kwargs']['batch_size']
     train_config['valid_batch_size'] = train_config['valid_kwargs']['batch_size']
