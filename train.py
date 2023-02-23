@@ -322,6 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
+    parser.add_argument('--merge_image', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
     parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
@@ -377,6 +378,7 @@ if __name__ == '__main__':
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.train_data_path
     train_config['test_data_path'] = args.test_data_path
+    train_config['merge_image'] = args.merge_image == 'true'
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
         train_config['cross_attention_args'] = {

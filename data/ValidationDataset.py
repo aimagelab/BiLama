@@ -29,7 +29,7 @@ class ValidationPatchSquare(Dataset):
     def __len__(self):
         return len(self.full_images_paths)
 
-    def __getitem__(self, index, merge_image=False):
+    def __getitem__(self, index):
         full_image = Image.open(self.full_images_paths[index]).convert("RGB")
         mask_image = Image.open(self.mask_images_paths[index]).convert("L")
 

@@ -17,6 +17,7 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
     transform_variant = config['train_transform_variant'] if 'train_transform_variant' in config else None
     patch_size = config['train_patch_size']
     load_data = config['load_data']
+    merge_image = config['merge_image']
 
     logger.info(f"Train path: \"{train_data_path}\"")
     logger.info(f"Transform Variant: {transform_variant} - Training Patch Size: {patch_size}")
@@ -33,7 +34,13 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
             datasets.append(TrainPatchSquare(patch_square_path, transform=transform))
         else:
             datasets.append(
-                TrainingDataset(Path(path) / 'train', split_size=patch_size, transform=transform, load_data=load_data))
+                TrainingDataset(
+                    data_path=Path(path) / 'train',
+                    split_size=patch_size,
+                    transform=transform,
+                    load_data=load_data,
+                    merge_image=merge_image))
+
     logger.info(f"Loading train datasets took {time.time() - time_start:.2f} seconds")
 
     train_dataset = ConcatDataset(datasets)

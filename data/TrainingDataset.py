@@ -31,9 +31,6 @@ class TrainPatchSquare(Dataset):
                 / f'{full_image.stem.split("_")[0]}_mask.png' for full_image in self.full_images_paths
             ]
 
-
-
-
         # self.full_images = [Image.open(image_path).convert("RGB") for image_path in self.full_images]
         # self.mask_images = [Image.open(mask_image_path).convert("L") for mask_image_path in self.mask_images]
 
@@ -69,7 +66,7 @@ class TrainPatchSquare(Dataset):
 
 class TrainingDataset(Dataset):
 
-    def __init__(self, data_path, split_size=256, patch_size=384, transform=None, load_data=True):
+    def __init__(self, data_path, split_size=256, patch_size=384, transform=None, load_data=True, merge_image=True):
         super(TrainingDataset, self).__init__()
         self.imgs = list(Path(data_path).rglob(f'imgs_{patch_size}/*'))
         self.gt_imgs = [img_path.parent.parent / ('gt_' + img_path.parent.name) / img_path.name for img_path in self.imgs]
@@ -81,11 +78,15 @@ class TrainingDataset(Dataset):
 
         self.split_size = split_size
         self.transform = transform
+        self.merge_image = merge_image
 
     def __len__(self):
         return len(self.imgs)
 
-    def __getitem__(self, index, merge_image=True):
+    def __getitem__(self, index, merge_image=None):
+        if self.merge_image and merge_image is None:
+            merge_image = self.merge_image
+
         if self.load_data:
             sample = self.imgs[index]
             gt_sample = self.gt_imgs[index]
