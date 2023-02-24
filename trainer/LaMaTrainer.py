@@ -54,6 +54,7 @@ class LaMaTrainingModule:
             self.checkpoint = torch.load(config['resume'])
             checkpoint_config = self.checkpoint['config'] if 'config' in self.checkpoint else {}
             self.config = self.config | checkpoint_config
+            config = self.config
 
         self.training_only_with_patch_square = False
         if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
