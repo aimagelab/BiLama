@@ -6,16 +6,16 @@
 #SBATCH -J bilama
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio,germano,gervasoni,pippobaudo,rezzonico,ajeje,helmut,lurcanio
 
-source activate LaMa
+conda deactivate
+conda activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
-scontrol update JobID="$SLURM_JOB_ID" name="bilama_@{n_blocks}_@{operation}_@{att}_SKIP@{skip}"
+scontrol update JobID="$SLURM_JOB_ID" name="@SKIP@{skip}_@{sche}_@{ema_rates}_@{loss}"
 srun python3 train.py -c base --n_blocks @{n_blocks|6} \
               --operation "@{operation|ffc}" --attention @{att|none} --num_workers 2 \
               --epochs 500 --skip @{skip|none} --unet_layers @{unet|0} \
-              --apply_threshold_to @{apply_thres} --threshold @{thres} \
               --lr_scheduler @{sche} --lr_scheduler_kwargs "@{sche_kwargs}" \
-              --load_data @{load_data} --resume @{resume} \
-              --n_downsampling @{n_down} --ema_rate "@{ema_rates}" \
+              --resume @{resume} --ema_rate "@{ema_rates}" \
+              --loss @{loss} \
               --train_data_path \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \

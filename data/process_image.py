@@ -52,11 +52,16 @@ class PatchImage:
         path_imgs = list(path_img for path_img in imgs.rglob('*') if path_img.suffix in {".png", ".jpg", ".bmp", ".tif"})
         for i, img in enumerate(path_imgs):
             or_img = cv2.imread(str(img))
-            gt_img = cv2.imread(str(gt / img.name))
+            gt_img = gt / img.name
+            gt_img = gt_img if gt_img.exists() else gt / (img.stem + '.png')
+            gt_img = cv2.imread(str(gt_img))
             # if i < len(path_imgs) * 0.1:
             #     self._split_train_images(or_img, gt_img, type="valid")
             # else:
-            self._split_train_images(or_img, gt_img, type="train")
+            try:
+                self._split_train_images(or_img, gt_img, type="train")
+            except Exception as e:
+                print(f'Error: {e} - {img}')
 
     def _split_train_images(self, or_img: np.ndarray, gt_img: np.ndarray, type: str):
         runtime_size = self.overlap_size if type == "train" else self.patch_size_valid
@@ -99,13 +104,11 @@ class PatchImage:
                 if type == "train":
                     cv2.imwrite(str(self.train_folder / (str(self.number_image) + '.png')), dg_patch)
                     cv2.imwrite(str(self.train_gt_folder / (str(self.number_image) + '.png')), gt_patch)
-                    self.number_image += 1
-                    print(self.number_image)
                 elif type == "valid":
                     cv2.imwrite(str(self.valid_folder / (str(self.number_image) + '.png')), dg_patch)
                     cv2.imwrite(str(self.valid_gt_folder / (str(self.number_image) + '.png')), gt_patch)
-                    self.number_image += 1
-                    print(self.number_image)
+                self.number_image += 1
+                print(self.number_image, end='\r')
 
     def _create_name(self, folder: str, i: int, j: int):
         return folder + self.image_name.split('.')[0] + '_' + str(i) + '_' + str(j) + '.png'
