@@ -16,8 +16,8 @@ srun python3 train.py -c base --n_blocks @{n_blocks|6} \
               --lr_scheduler @{sche|constant} --lr_scheduler_kwargs "@{sche_kwargs|dict()}" \
               --resume @{resume|none} --ema_rate "@{ema_rates|-1}" \
               --loss @{loss|binary_cross_entropy} --merge_image @{merge|true} \
-              --train_transform_variant threshold_mask \
-              --train_data_path \
+              --train_transform_variant threshold_mask --lr_scheduler_warmup 10 \
+              --datasets \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \
               /scratch/fquattrini/binarization_datasets/DIBCO11 \
@@ -26,6 +26,7 @@ srun python3 train.py -c base --n_blocks @{n_blocks|6} \
               /scratch/fquattrini/binarization_datasets/DIBCO14 \
               /scratch/fquattrini/binarization_datasets/DIBCO16 \
               /scratch/fquattrini/binarization_datasets/DIBCO17 \
+              /scratch/fquattrini/binarization_datasets/DIBCO18 \
               /scratch/fquattrini/binarization_datasets/DIBCO19 \
               /scratch/fquattrini/binarization_datasets/DirtyDocuments \
               /scratch/fquattrini/binarization_datasets/PALM \
@@ -33,5 +34,5 @@ srun python3 train.py -c base --n_blocks @{n_blocks|6} \
               /scratch/fquattrini/binarization_datasets/SMADI \
               /scratch/fquattrini/binarization_datasets/BickleyDiary \
               /scratch/fquattrini/binarization_datasets/PHIBD \
-              --test_data_path \
-              /scratch/fquattrini/binarization_datasets/DIBCO18
+              --test_dataset DIBCO18
+

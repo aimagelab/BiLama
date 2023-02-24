@@ -328,8 +328,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_transform_variant', type=str, default='none', choices=['threshold_mask', 'none'])
     parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
-    parser.add_argument('--train_data_path', type=str, nargs='+', required=True)
-    parser.add_argument('--test_data_path', type=str, nargs='+', required=True)
+    parser.add_argument('--datasets', type=str, nargs='+', required=True)
+    parser.add_argument('--test_dataset', type=str, required=True)
 
     args = parser.parse_args()
 
@@ -379,9 +379,12 @@ if __name__ == '__main__':
     train_config['seed'] = args.seed
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
+    args.train_data_path = [dataset for dataset in args.datasets if not dataset.endswith(args.test_dataset)]
+    args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(args.test_dataset)]
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.train_data_path
     train_config['test_data_path'] = args.test_data_path
+    assert len(train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"
     train_config['merge_image'] = args.merge_image == 'true'
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
