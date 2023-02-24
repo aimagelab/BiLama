@@ -30,17 +30,18 @@ if __name__ == '__main__':
     args = configure_args(path_config)
     datasets = [
         # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO09/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO10/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO11/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO12/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO13/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO14/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO16/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO17/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO18/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO19/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/PALM/train',
-        '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DirtyDocuments/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO10/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO11/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO12/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO13/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO14/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO16/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO17/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO18/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DIBCO19/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/PALM/train',
+        # '/mnt/beegfs/work/FoMo_AIISDH/datasets/datasets_refactoring/DirtyDocuments/train',
+        '/mnt/beegfs/work/FoMo_AIISDH/datasets/new_bin_datasets/ISOSBTD'
     ]
     for dataset in datasets:
         args.path_destination = dataset

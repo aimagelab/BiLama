@@ -264,7 +264,10 @@ def train(config_args, config):
                 logger.info(stdout)
                 logger.info('-' * 75)
 
-                trainer.lr_scheduler.step(psnr_running_mean)
+                if config['lr_scheduler'] == 'plateau':
+                    trainer.lr_scheduler.step(metrics=psnr_running_mean)
+                else:
+                    trainer.lr_scheduler.step()
 
                 if wandb_log:
                     wandb_log.on_log(wandb_logs)
