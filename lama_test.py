@@ -47,34 +47,39 @@ def test(config):
 
     path_checkpoints = list(path_checkpoints.glob('*_best_psnr*.pth'))
     for i, path_checkpoint in enumerate(path_checkpoints):
-        config['resume'] = path_checkpoint
-        print(f'Processing {path_checkpoint} ({i + 1}/{len(path_checkpoints)})')
-        checkpoint = torch.load(path_checkpoint)
-        if not 'config' in checkpoint:
-            print(f"Checkpoint {path_checkpoint} is not compatible with this version of the code")
+        try:
+            config['resume'] = path_checkpoint
+            print(f'Processing {path_checkpoint} ({i + 1}/{len(path_checkpoints)})')
+            checkpoint = torch.load(path_checkpoint)
+            if not 'config' in checkpoint:
+                print(f"Checkpoint {path_checkpoint} is not compatible with this version of the code")
+                continue
+            trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
+            data = {'checkpoint': path_checkpoint.name}
+
+            for dataset, loader in zip(config['datasets'], test_loaders):
+                print(f'Processing {dataset}')
+                tmp_config = config.copy()
+                tmp_config['test_data_path'] = [dataset]
+                trainer.test_data_loader = loader
+
+                avg_metrics, avg_loss, images = trainer.test()
+                data[Path(dataset).name] = avg_metrics['psnr']
+
+            results.append(data)
+            print('\t'.join([f'{k}: {v}' for k, v in data.items()]))
+
+            with open('/mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/all_test_results.csv', 'a') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=data.keys())
+                if i == 0:
+                    writer.writeheader()
+                writer.writerows(results)
+        except Exception as e:
+            print(f'Error while processing {path_checkpoint}')
+            traceback.print_exc()
             continue
-        trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
-        data = {'checkpoint': path_checkpoint.name}
 
-        for dataset, loader in zip(config['datasets'], test_loaders):
-            print(f'Processing {dataset}')
-            tmp_config = config.copy()
-            tmp_config['test_data_path'] = [dataset]
-            trainer.test_data_loader = loader
-
-            avg_metrics, avg_loss, images = trainer.test()
-            data[Path(dataset).name] = avg_metrics['psnr']
-
-        results.append(data)
-        print('\t'.join([f'{k}: {v}' for k, v in data.items()]))
-
-        with open('/mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/all_test_results.csv', 'a') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=data.keys())
-            if i == 0:
-                writer.writeheader()
-            writer.writerows(results)
-
-    with open('/mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/all_test_results.csv', 'w') as csvfile:
+    with open('/mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/final_all_test_results.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=data.keys())
         writer.writeheader()
         writer.writerows(results)
@@ -128,7 +133,7 @@ if __name__ == '__main__':
     config_filename = args.configuration
 
     logger.info("Start process ...")
-    configuration_path = f"../configs/training/{config_filename}.yaml"
+    configuration_path = f"configs/training/{config_filename}.yaml"
     logger.info(f"Selected \"{configuration_path}\" configuration file")
 
     with open(configuration_path) as file:

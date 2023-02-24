@@ -224,7 +224,11 @@ class LaMaTrainingModule:
 
         test = test.squeeze(0)
         test = test.permute(1, 0, 2, 3)
-        pred = self.model(test)
+
+        pred = []
+        for chunk in torch.split(test, self.config['train_batch_size']):
+            pred.append(self.model(chunk))
+        pred = torch.cat(pred)
 
         pred = reconstruct_ground_truth(pred, gt_test, num_rows=num_rows, config=self.config)
 
