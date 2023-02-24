@@ -44,7 +44,7 @@ def calculate_psnr(predicted: torch.Tensor, ground_truth: torch.Tensor, threshol
 
 class LaMaTrainingModule:
 
-    def __init__(self, config, device=None):
+    def __init__(self, config, device=None, make_loaders=True):
 
         self.config = config
         self.device = device
@@ -53,18 +53,20 @@ class LaMaTrainingModule:
         if 'resume' in self.config:
             self.checkpoint = torch.load(config['resume'])
             checkpoint_config = self.checkpoint['config'] if 'config' in self.checkpoint else {}
-            self.config = self.config | checkpoint_config
+            self.config.update(checkpoint_config)
             config = self.config
 
         self.training_only_with_patch_square = False
         if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
             self.training_only_with_patch_square = True
-        self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
-        self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
-        self.test_dataset = make_test_dataset(config)
-        self.train_data_loader = make_train_dataloader(self.train_dataset, config)
-        self.valid_data_loader = make_valid_dataloader(self.valid_dataset, config)
-        self.test_data_loader = make_test_dataloader(self.test_dataset, config)
+
+        if make_loaders:
+            self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
+            self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
+            self.test_dataset = make_test_dataset(config)
+            self.train_data_loader = make_train_dataloader(self.train_dataset, config)
+            self.valid_data_loader = make_valid_dataloader(self.valid_dataset, config)
+            self.test_data_loader = make_test_dataloader(self.test_dataset, config)
 
         self.model = LaMa(input_nc=config['input_channels'], output_nc=config['output_channels'],
                           n_downsampling=config['n_downsampling'], init_conv_kwargs=config['init_conv_kwargs'],
