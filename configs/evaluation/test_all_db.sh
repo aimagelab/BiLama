@@ -6,6 +6,7 @@
 #SBATCH -J test_db
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
 
+. /usr/local/anaconda3/etc/profile.d/conda.sh
 conda deactivate
 conda activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit

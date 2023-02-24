@@ -95,7 +95,7 @@ def make_val_dataset(config: dict, training_only_with_patch_square=False):
     return validation_dataset
 
 
-def make_test_dataset(config: dict):
+def make_test_dataset(config: dict, is_validation=False):
     test_data_path = config['test_data_path']
     patch_size = config['test_patch_size']
     stride = config['test_stride']
@@ -116,7 +116,7 @@ def make_test_dataset(config: dict):
                     patch_size=patch_size,
                     stride=stride,
                     transform=transform,
-                    is_validation=False,
+                    is_validation=is_validation,
                     load_data=load_data))
 
     logger.info(f"Loading test datasets took {time.time() - time_start:.2f} seconds")

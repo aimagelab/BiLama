@@ -33,11 +33,15 @@ def test(config):
     results = []
 
     test_loaders = []
+    new_binarization_datasets = ['ISOSBTD', 'PHIBD', 'Nabuco', 'BickleyDiary', 'SMADI']
     for dataset in config['datasets']:
         print(f'Loading {dataset}')
+        is_validation = False
+        if any(elem in dataset for elem in new_binarization_datasets):
+            is_validation = True
         tmp_config = config.copy()
         tmp_config['test_data_path'] = [dataset]
-        test_dataset = make_test_dataset(tmp_config)
+        test_dataset = make_test_dataset(tmp_config, is_validation=is_validation)
         test_data_loader = make_test_dataloader(test_dataset, tmp_config)
         test_loaders.append(test_data_loader)
 
