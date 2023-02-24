@@ -21,10 +21,9 @@ def make_lr_scheduler(kind, optimizer, kwargs, warmup, config):
         func = lambda epoch: lr - epoch * (lr - lr_min) / epochs
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=func)
     elif kind == 'plateau':
-        # kwargs = dict(mode='max', factor=0.5, patience=config['patience'] // 2) | kwargs
-        kwargs_to_add = dict(mode='max', factor=0.5, patience=config['patience'] // 2)
-        kwargs = dict(list(kwargs_to_add.items()) + list(kwargs.items()))
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, **kwargs)
+        kwargs_default = dict(mode='max', factor=0.5, patience=config['patience'] // 2)
+        kwargs_default.update(kwargs)
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, **kwargs_default)
     else:
         raise ValueError(f"Unknown kind of lr scheduler: {kind}")
 
