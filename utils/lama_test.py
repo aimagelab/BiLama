@@ -41,7 +41,7 @@ def test(config):
         test_data_loader = make_test_dataloader(test_dataset, tmp_config)
         test_loaders.append(test_data_loader)
 
-    path_checkpoints = list(path_checkpoints.glob('*_best_psnr.pth'))
+    path_checkpoints = list(path_checkpoints.glob('*_best_psnr*.pth'))
     for i, path_checkpoint in enumerate(path_checkpoints):
         config['resume'] = path_checkpoint
         print(f'Processing {path_checkpoint} ({i + 1}/{len(path_checkpoints)})')
