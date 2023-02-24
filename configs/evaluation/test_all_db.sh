@@ -29,4 +29,3 @@ srun python3 utils/lama_test.py -c base \
               /scratch/fquattrini/binarization_datasets/PHIBD \
               /scratch/fquattrini/binarization_datasets/ISOSBTD \
               --test_dataset DIBCO18
-
