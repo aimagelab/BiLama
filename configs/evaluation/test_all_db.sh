@@ -6,11 +6,10 @@
 #SBATCH -J test_db
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
 
-. /usr/local/anaconda3/etc/profile.d/conda.sh
-conda deactivate
-conda activate LaMa
+#conda deactivate
+#conda activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
-srun python3 utils/lama_test.py -c base \
+srun /homes/$(whoami)/.conda/envs/LaMa/bin/python lama_test.py -c base \
               --datasets \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \
