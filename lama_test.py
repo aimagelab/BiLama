@@ -49,7 +49,7 @@ def test(config):
     for i, path_checkpoint in enumerate(path_checkpoints):
         try:
             config['resume'] = path_checkpoint
-            print(f'Processing {path_checkpoint} ({i + 1}/{len(path_checkpoints)})')
+            print(f'({i + 1}/{len(path_checkpoints)}): Processing {path_checkpoint}')
             checkpoint = torch.load(path_checkpoint)
             if not 'config' in checkpoint:
                 print(f"Checkpoint {path_checkpoint} is not compatible with this version of the code")
