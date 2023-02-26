@@ -17,7 +17,7 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks @{
               --resume @{resume|none} --ema_rate "@{ema_rates|-1}" \
               --loss @{loss|charbonnier} --merge_image @{merge|true} \
               --train_transform_variant threshold_mask --lr_scheduler_warmup 10 \
-              --train_data_path \
+              --datasets \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \
               /scratch/fquattrini/binarization_datasets/DIBCO11 \
@@ -26,12 +26,13 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks @{
               /scratch/fquattrini/binarization_datasets/DIBCO14 \
               /scratch/fquattrini/binarization_datasets/DIBCO16 \
               /scratch/fquattrini/binarization_datasets/DIBCO17 \
+              /scratch/fquattrini/binarization_datasets/DIBCO18 \
               /scratch/fquattrini/binarization_datasets/DIBCO19 \
               /scratch/fquattrini/binarization_datasets/DirtyDocuments \
               /scratch/fquattrini/binarization_datasets/PALM \
+              /scratch/fquattrini/binarization_datasets/Nabuco \
               /scratch/fquattrini/binarization_datasets/SMADI \
               /scratch/fquattrini/binarization_datasets/BickleyDiary \
               /scratch/fquattrini/binarization_datasets/PHIBD \
               /scratch/fquattrini/binarization_datasets/ISOSBTD \
-              --test_data_path \
-              /scratch/fquattrini/binarization_datasets/DIBCO18
+              test_dataset DIBCO18
