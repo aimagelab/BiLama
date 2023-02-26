@@ -249,6 +249,7 @@ class LaMaTrainingModule:
 
     @torch.no_grad()
     def test(self):
+        self.model.eval()
         test_loss = 0.0
         threshold = self.config['threshold']
 
@@ -263,10 +264,12 @@ class LaMaTrainingModule:
         avg_loss = test_loss / len(self.test_data_loader)
         avg_metrics = validator.get_metrics()
 
+        self.model.train()
         return avg_metrics, avg_loss, images
 
     @torch.no_grad()
     def validation(self):
+        self.model.eval()
         if self.training_only_with_patch_square:
             return self.validation_patch_square()
         valid_loss = 0.0
@@ -283,10 +286,12 @@ class LaMaTrainingModule:
         avg_loss = valid_loss / len(self.valid_data_loader)
         avg_metrics = validator.get_metrics()
 
+        self.model.train()
         return avg_metrics, avg_loss, images
 
     @torch.no_grad()
     def validation_patch_square(self):
+        self.model.eval()
         valid_loss = 0.0
         threshold = self.config['threshold']
         validator = Validator(apply_threshold=self.config['apply_threshold_to_validation'], threshold=threshold)
@@ -303,4 +308,5 @@ class LaMaTrainingModule:
 
         avg_loss = valid_loss / len(self.valid_data_loader)
         avg_metrics = validator.get_metrics()
+        self.model.train()
         return avg_metrics, avg_loss, None

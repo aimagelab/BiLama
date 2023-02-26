@@ -141,7 +141,6 @@ def train(config_args, config):
                 #                  Test                  #
                 ##########################################
 
-                trainer.model.eval()
                 train_validator.reset()
 
                 with torch.no_grad():
