@@ -7,11 +7,11 @@
 #SBATCH --mem=24G
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
 
-conda deactivate
-conda activate LaMa
+#conda deactivate
+#conda activate LaMa
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
 scontrol update JobID="$SLURM_JOB_ID" name="ALL_@{skip}_@{sche}_@{ema_rates}_@{loss}"
-srun python3 train.py -c base --n_blocks @{n_blocks|6} \
+srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks @{n_blocks|6} \
               --operation "@{operation|ffc}" --attention @{att|none} --num_workers 2 \
               --epochs 500 --skip @{skip|add} --unet_layers @{unet|0} \
               --lr_scheduler @{sche|constant} --lr_scheduler_kwargs "@{sche_kwargs|dict()}" \
