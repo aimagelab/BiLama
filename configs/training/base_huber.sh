@@ -35,4 +35,4 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks @{
               /scratch/fquattrini/binarization_datasets/BickleyDiary \
               /scratch/fquattrini/binarization_datasets/PHIBD \
               /scratch/fquattrini/binarization_datasets/ISOSBTD \
-              test_dataset DIBCO18
+              --test_dataset DIBCO18
