@@ -344,7 +344,7 @@ if __name__ == '__main__':
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
         checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
-        assert len(checkpoints) > 1, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
+        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
         args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
 
