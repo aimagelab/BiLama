@@ -30,7 +30,7 @@ assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to ru
 
 def binarize_for_competition(config_args, config):
     save_folder = Path('/mnt/beegfs/work/FoMo_AIISDH/fquattrini/BiLama_binarization_results') / config_args.experiment_name
-
+    save_folder.mkdir(exist_ok=True)
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
@@ -40,13 +40,14 @@ def binarize_for_competition(config_args, config):
     test_data_loader = make_test_dataloader(test_dataset, tmp_config)
     trainer.model.eval()
     with torch.no_grad():
-        for item in test_data_loader:
+        for i, item in enumerate(test_data_loader):
             image_name = item['image_name'][0]
+            validator = Validator(apply_threshold=True, threshold=0.5)
             test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-            images_item['image_name'][0].save(Path(save_folder, f"{image_name}_test_img.png"))
-            images_item['image_name'][1].save(Path(save_folder, f"{image_name}_pred_img.png"))
-            images_item['image_name'][2].save(Path(save_folder, f"{image_name}_gt_test_img.png"))
+            images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
+            images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
+            images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
     trainer.model.train()
 
