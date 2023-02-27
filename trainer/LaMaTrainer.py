@@ -53,6 +53,9 @@ class LaMaTrainingModule:
         if 'resume' in self.config:
             self.checkpoint = torch.load(config['resume'])
             checkpoint_config = self.checkpoint['config'] if 'config' in self.checkpoint else {}
+            if 'train_data_path' in checkpoint_config: del checkpoint_config['train_data_path']
+            if 'valid_data_path' in checkpoint_config: del checkpoint_config['valid_data_path']
+            if 'test_data_path' in checkpoint_config: del checkpoint_config['test_data_path']
             self.config.update(checkpoint_config)
             config = self.config
 
