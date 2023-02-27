@@ -334,6 +334,7 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
     parser.add_argument('--test_dataset', type=str, required=True)
+    parser.add_argument('--exclude_datasets', type=str, nargs='+', default=[])
 
     args = parser.parse_args()
 
@@ -383,6 +384,8 @@ if __name__ == '__main__':
     train_config['seed'] = args.seed
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
+
+    args.datasets = [dataset for dataset in args.datasets if Path(dataset).name not in args.exclude_datasets]
     args.train_data_path = [dataset for dataset in args.datasets if not dataset.endswith(args.test_dataset)]
     args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(args.test_dataset)]
     train_config['train_data_path'] = args.train_data_path
