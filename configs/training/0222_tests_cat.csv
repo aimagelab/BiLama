@@ -1,10 +1,10 @@
 ﻿n_blocks,operation,att,skip,unet,sche,sche_kwargs,loss,resume,ema_rates
-6,ffc,none,cat,2,constant,{},binary_cross_entropy,none,-1
-6,ffc,none,cat,2,constant,{},charbonnier,none,-1
-6,ffc,none,cat,2,constant,{},charbonnier binary_cross_entropy,none,-1
-6,ffc,none,cat,2,plateau,{},binary_cross_entropy,none,-1
-6,ffc,none,cat,2,cosine,{},binary_cross_entropy,none,-1
-6,ffc,none,cat,2,linear,{},binary_cross_entropy,none,-1
-6,ffc,none,cat,2,constant,{},binary_cross_entropy,none,0.9
-6,ffc,none,cat,2,constant,{},binary_cross_entropy,none,0.99
-6,ffc,none,cat,2,constant,{},binary_cross_entropy,none,0.999
+6,ffc,none,cat,2,linear,{},charbonnier,none,-1
+6,ffc,none,cat,2,cosine,{},charbonnier,none,-1
+6,ffc,none,cat,2,plateau,{'factor': 0.9},charbonnier,none,-1
+6,ffc,none,cat,2,plateau,{'factor': 0.8},charbonnier,none,-1
+6,ffc,none,cat,2,plateau,{'factor': 0.7},charbonnier,none,-1
+6,ffc,none,cat,2,plateau,{'factor': 0.5},charbonnier,none,-1
+6,ffc,none,cat,2,step,{'gamma': 0.9},charbonnier,none,-1
+6,ffc,none,cat,2,step,{'gamma': 0.8},charbonnier,none,-1
+6,ffc,none,cat,2,step,{'gamma': 0.5},charbonnier,none,-1

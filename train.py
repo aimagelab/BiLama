@@ -22,7 +22,12 @@ from utils.ioutils import store_images
 logger = get_logger('main')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to run this code.'
+# assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to run this code.'
+if not torch.cuda.is_available():
+    txt = '## CUDA is not available. Please use a GPU to run this code. ##'
+    print('#' * len(txt))
+    print(txt)
+    print('#' * len(txt))
 
 
 def train(config_args, config):
