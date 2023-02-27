@@ -19,7 +19,7 @@ class ThresholdMask:
 
     def __call__(self, sample):
         image, gt = sample['image'], sample['gt']
-        gt = (gt > self.threshold).int()
+        gt = (gt > self.threshold).float()
         return {'image': image, 'gt': gt}
 
 
