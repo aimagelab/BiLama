@@ -5,6 +5,7 @@
 #SBATCH -o /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_%j.out
 #SBATCH --mem=24G
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
+#SBATCH -J @{skip}_@{sche}_@{ema_rates}_@{loss}
 
 #conda deactivate
 #conda activate LaMa
