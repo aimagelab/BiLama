@@ -8,14 +8,15 @@ import csv
 
 regex = r'([ a-zA-Z()-]+)\t*:\s*(\d+\.?\d+)'
 
+
 def run_process(exe):
     proc = subprocess.run(exe, text=True, capture_output=True)
     return proc.stdout
 
 
 def main(path):
-    pred = {p.stem.split('_')[0]:p for p in path.glob('*pred*.png')}
-    gt = {p.stem.split('_')[0]:p for p in path.glob('*gt*.png')}
+    pred = {p.stem.split('_')[0]: p for p in path.glob('*pred*.png')}
+    gt = {p.stem.split('_')[0]: p for p in path.glob('*gt*.png')}
     assert len(pred) == len(gt) and all(k in gt for k in pred.keys())
 
     results = {}
@@ -48,7 +49,6 @@ def main(path):
         for id in sorted(results.keys()):
             results[id]['id'] = id
             writer.writerow(results[id])
-
 
 
 if __name__ == "__main__":

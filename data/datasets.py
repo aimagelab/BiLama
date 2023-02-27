@@ -1,4 +1,5 @@
 from torchvision.transforms import transforms
+from torchvision.transforms import functional
 import time
 from data.TrainingDataset import TrainingDataset, TrainPatchSquare
 from data.TestDataset import TestPatchSquare, TestDataset
@@ -101,7 +102,7 @@ def make_test_dataset(config: dict, is_validation=False):
     stride = config['test_stride']
     load_data = config['load_data']
 
-    transform = transforms.Compose([functional.rgb_to_grayscale, transforms.ToTensor()])
+    transform = transforms.Compose([transforms.ToTensor()])
 
     logger.info(f"Loading test datasets...")
     time_start = time.time()

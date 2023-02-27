@@ -29,8 +29,8 @@ assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to ru
 
 
 def binarize_for_competition(config_args, config):
-    save_folder = Path('/mnt/beegfs/work/FoMo_AIISDH/fquattrini/BiLama_binarization_results') / config_args.experiment_name
-    save_folder.mkdir(exist_ok=True)
+    save_folder = Path('/mnt/beegfs/work/FoMo_AIISDH/fquattrini/BiLama_binarization_results_grey') / config_args.experiment_name
+    save_folder.mkdir(exist_ok=True, parents=True)
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
