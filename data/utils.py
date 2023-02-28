@@ -33,6 +33,14 @@ def get_transform(transform_variant: str, output_size: int):
     if transform_variant == 'threshold_mask':
         transform_list.append(CustomTransform.ThresholdMask(threshold=0.9))
 
+    if transform_variant == 'latin':
+        transform_list = [
+            CustomTransform.RandomRotation((-10, 10)),
+            CustomTransform.RandomCrop(output_size),
+            CustomTransform.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5, saturation=0.5),
+            CustomTransform.ToTensor(),
+        ]
+
     transform = transforms.Compose(transform_list)
     return transform
 
@@ -58,9 +66,10 @@ def get_patches(image_source: Image, patch_size: int, stride: int):
     return np.array(image_patches), num_rows, num_cols
 
 
-def reconstruct_ground_truth(patches, original, num_rows, config, stride=128, patch_size=256):
+def reconstruct_ground_truth(patches, original, num_rows, config, patch_size=256):
     channels = 1
     batch_size = 1
+    stride = config['test_stride']
 
     if stride == 128:
         _, _, width, height = original.shape

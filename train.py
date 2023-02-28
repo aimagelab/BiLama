@@ -333,8 +333,9 @@ if __name__ == '__main__':
     parser.add_argument('--lr_scheduler_kwargs', type=eval, default={})
     parser.add_argument('--ema_rate', type=float, default=-1)
     parser.add_argument('--load_data', type=str, default='true', choices=['true', 'false'])
-    parser.add_argument('--train_transform_variant', type=str, default='none', choices=['threshold_mask', 'none'])
+    parser.add_argument('--train_transform_variant', type=str, default='none', choices=['threshold_mask', 'latin', 'none'])
     parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
+    parser.add_argument('--overlap_test', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
     parser.add_argument('--test_dataset', type=str, required=True)
@@ -443,6 +444,11 @@ if __name__ == '__main__':
     elif args.apply_threshold_to == 'test':
         train_config['apply_threshold_to_train'] = False
         train_config['apply_threshold_to_valid'] = False
+
+    if args.overlap_test == 'true':
+        train_config['test_stride'] = 128
+    else:
+        train_config['test_stride'] = 256
 
     set_seed(args.seed)
 
