@@ -54,6 +54,7 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
 
 def make_val_dataset(config: dict, training_only_with_patch_square=False):
     val_data_path = config['valid_data_path']
+    train_data_path = config['train_data_path']
     patch_size = config['valid_patch_size']
     load_data = config['load_data']
 
@@ -73,11 +74,13 @@ def make_val_dataset(config: dict, training_only_with_patch_square=False):
         else:
             stride = config['test_stride']
             data_path = Path(path) / 'eval' if (Path(path) / 'eval').exists() else None
+            if path not in train_data_path:
+                data_path = Path(path) / 'test' if (Path(path) / 'test').exists() else None
             if data_path:
                 logger.info(f"[{i}/{len(val_data_path)}] Loading validation dataset from \"{path}\"")
                 datasets.append(
                     TestDataset(
-                        data_path=Path(path) / 'eval',
+                        data_path=data_path,
                         patch_size=patch_size,
                         stride=stride,
                         transform=transform,

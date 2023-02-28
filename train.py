@@ -338,6 +338,7 @@ if __name__ == '__main__':
     parser.add_argument('--overlap_test', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
+    parser.add_argument('--validation_dataset', type=str, required=False)
     parser.add_argument('--test_dataset', type=str, required=True)
     parser.add_argument('--exclude_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
@@ -396,8 +397,13 @@ if __name__ == '__main__':
     args.train_data_path = [dataset for key, dataset in args.datasets.items() if key != args.test_dataset]
     args.test_data_path = [args.datasets[args.test_dataset]]
     args.aux_data_path = [dataset for key, dataset in args.datasets.items() if key in args.aux_datasets]
+    if args.validation_dataset:
+        args.train_data_path = [dataset for key, dataset in args.datasets.items() if key != args.test_dataset and key != args.validation_dataset]
+        args.valid_data_path = [args.datasets[args.validation_dataset]]
+        train_config['valid_data_path'] = args.valid_data_path
+    else:
+        train_config['valid_data_path'] = args.train_data_path
     train_config['train_data_path'] = args.train_data_path
-    train_config['valid_data_path'] = args.train_data_path
     train_config['test_data_path'] = args.test_data_path
     train_config['aux_data_path'] = args.aux_data_path
     assert len(train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"

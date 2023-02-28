@@ -29,12 +29,13 @@ assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to ru
 
 
 def binarize_for_competition(config_args, config):
-    save_folder = Path('/mnt/beegfs/work/FoMo_AIISDH/fquattrini/BiLama_binarization_results_grey') / config_args.experiment_name
+    save_folder = Path('/home/fquattrini/BiLama_binarization_results_bak') / config_args.experiment_name
     save_folder.mkdir(exist_ok=True, parents=True)
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
     tmp_config = config.copy()
+    tmp_config['test_stride'] = 256
     tmp_config['test_data_path'] = test_dataset_path
     test_dataset = make_test_dataset(tmp_config)
     test_data_loader = make_test_dataloader(test_dataset, tmp_config)
@@ -49,7 +50,11 @@ def binarize_for_competition(config_args, config):
             images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
             images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
+    avg_metrics = validator.get_metrics()
+    print(f'Resulting PSNR for the images: {avg_metrics["psnr"]:.2f}')
+
     trainer.model.train()
+    exit()
 
 
 if __name__ == '__main__':
@@ -58,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--experiment_name', metavar='<name>', type=str,
                         help=f"The experiment name which will use on WandB")
     parser.add_argument('-c', '--configuration', metavar='<name>', type=str,
-                        help=f"The configuration name will use on WandB", default="debug_patch_square")
+                        help=f"The configuration name will use on WandB", default="base_bevagna")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none',
@@ -108,7 +113,7 @@ if __name__ == '__main__':
 
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
-        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
+        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth.bak"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
         args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
