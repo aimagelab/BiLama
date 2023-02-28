@@ -67,6 +67,15 @@ class LaMaTrainingModule:
             self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
             self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
             self.test_dataset = make_test_dataset(config)
+            self.aux_datasets = []
+            self.aux_loaders = []
+            for aux_dataset in config['aux_data_path']:
+                config_copy = copy.deepcopy(config)
+                config_copy['test_data_path'] = [aux_dataset]
+                dataset = make_test_dataset(config_copy)
+                self.aux_datasets.append(dataset)
+                self.aux_loaders.append(make_test_dataloader(dataset, config_copy))
+
             self.train_data_loader = make_train_dataloader(self.train_dataset, config)
             self.valid_data_loader = make_valid_dataloader(self.valid_dataset, config)
             self.test_data_loader = make_test_dataloader(self.test_dataset, config)
@@ -291,6 +300,17 @@ class LaMaTrainingModule:
 
         self.model.train()
         return avg_metrics, avg_loss, images
+
+
+    @torch.no_grad()
+    def aux_test(self):
+        old_loader = self.test_data_loader
+        results = {}
+        for loader in self.aux_loaders:
+            self.test_data_loader = loader
+            results[Path(loader.dataset.datasets[0].data_path).name] = self.test()
+        self.test_data_loader = old_loader
+        return results
 
     @torch.no_grad()
     def validation_patch_square(self):

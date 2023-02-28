@@ -176,6 +176,10 @@ def train(config_args, config):
                         if not trainer.ema_rate:
                             trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr_test')
 
+                    aux_metrics = trainer.aux_test()
+                    for key, value in aux_metrics.items():
+                        wandb_logs[f'aux/{key}'] = value[0]['psnr']
+
                     # name_image, (test_img, pred_img, gt_test_img) = list(images.items())[0]
                     # target_height = 512
                     # test_img = test_img.resize((target_height, int(target_height * test_img.height / test_img.width)))
@@ -335,6 +339,7 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
     parser.add_argument('--test_dataset', type=str, required=True)
     parser.add_argument('--exclude_datasets', type=str, nargs='+', default=[])
+    parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
 
     args = parser.parse_args()
 
@@ -385,12 +390,15 @@ if __name__ == '__main__':
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
 
-    args.datasets = [dataset for dataset in args.datasets if Path(dataset).name not in args.exclude_datasets]
-    args.train_data_path = [dataset for dataset in args.datasets if not dataset.endswith(args.test_dataset)]
-    args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(args.test_dataset)]
+    args.datasets = {Path(dataset).name: dataset for dataset in args.datasets}
+    args.datasets = {key: value for key, value in args.datasets.items() if key not in args.exclude_datasets}
+    args.train_data_path = [dataset for key, dataset in args.datasets.items() if key != args.test_dataset]
+    args.test_data_path = [args.datasets[args.test_dataset]]
+    args.aux_data_path = [dataset for key, dataset in args.datasets.items() if key in args.aux_datasets]
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.train_data_path
     train_config['test_data_path'] = args.test_data_path
+    train_config['aux_data_path'] = args.aux_data_path
     assert len(train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"
     train_config['merge_image'] = args.merge_image == 'true'
 

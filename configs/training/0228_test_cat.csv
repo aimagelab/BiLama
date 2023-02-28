@@ -1,0 +1,9 @@
+n_blocks,operation,att,skip,unet,sche,sche_kwargs,resume,ema_rates,loss,merge,test
+3,ffc,none,cat,2,cosine,dict(),none,-1,charbonnier,true,DIBCO18
+6,ffc,none,cat,2,cosine,dict(),none,-1,charbonnier,true,DIBCO18
+9,ffc,none,cat,2,cosine,dict(),none,-1,charbonnier,true,DIBCO18
+12,ffc,none,cat,2,cosine,dict(),none,-1,charbonnier,true,DIBCO18
+3,ffc,none,cat,2,constant,dict(),none,-1,charbonnier,true,DIBCO18
+6,ffc,none,cat,2,constant,dict(),none,-1,charbonnier,true,DIBCO18
+9,ffc,none,cat,2,constant,dict(),none,-1,charbonnier,true,DIBCO18
+12,ffc,none,cat,2,constant,dict(),none,-1,charbonnier,true,DIBCO18

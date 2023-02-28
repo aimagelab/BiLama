@@ -21,7 +21,7 @@ class TestDataset(Dataset):
             self.imgs = list(Path(data_path).rglob(f'imgs/*'))
         else:
             self.imgs = list(Path(data_path).rglob(f'*/imgs/*'))
-
+        self.data_path = data_path
         self.gt_imgs = [
             img_path.parent.parent / 'gt_imgs' / img_path.name if
             (img_path.parent.parent / 'gt_imgs' / img_path.name).exists() else

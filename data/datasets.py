@@ -119,6 +119,7 @@ def make_test_dataset(config: dict, is_validation=False):
                     transform=transform,
                     is_validation=is_validation,
                     load_data=load_data))
+        logger.info(f'Loaded test dataset from {path} with {len(datasets[-1])} instances.')
 
     logger.info(f"Loading test datasets took {time.time() - time_start:.2f} seconds")
 
