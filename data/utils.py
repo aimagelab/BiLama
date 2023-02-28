@@ -22,7 +22,8 @@ def get_transform(transform_variant: str, output_size: int):
     elif transform_variant == 'equalize_contrast':
         transform_list.append(CustomTransform.RandomEqualize())
 
-    transform_list.append(CustomTransform.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5, saturation=0.5))
+    if transform_variant != 'no_color_jitter':
+        transform_list.append(CustomTransform.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5, saturation=0.5))
     transform_list.append(CustomTransform.RandomRotation((0, 360)))
     transform_list.append(CustomTransform.RandomHorizontalFlip())
     transform_list.append(CustomTransform.RandomVerticalFlip())
@@ -57,11 +58,9 @@ def get_patches(image_source: Image, patch_size: int, stride: int):
     return np.array(image_patches), num_rows, num_cols
 
 
-def reconstruct_ground_truth(patches: torch.Tensor, original: torch.Tensor, num_rows: int, config: dict):
-    channels = config['output_channels']
-    batch = config['valid_batch_size']
-    patch_size = config['valid_patch_size']
-    stride = config['valid_stride']
+def reconstruct_ground_truth(patches, original, num_rows, config, stride=128, patch_size=256):
+    channels = 1
+    batch_size = 1
 
     if stride == 128:
         _, _, width, height = original.shape
@@ -71,7 +70,7 @@ def reconstruct_ground_truth(patches: torch.Tensor, original: torch.Tensor, num_
         y_steps = [y + (stride // 2) for y in range(0, height, stride)]
         y_steps[0], y_steps[-1] = 0, height
 
-        patches = patches.view(batch, channels, -1, num_rows, patch_size, patch_size)
+        patches = patches.view(batch_size, channels, -1, num_rows, patch_size, patch_size)
         canvas = torch.zeros_like(original)
         for j in range(len(x_steps) - 1):
             for i in range(len(y_steps) - 1):

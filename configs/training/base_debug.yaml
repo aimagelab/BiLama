@@ -47,7 +47,7 @@ valid_kwargs:
 
 # Test configuration
 test_patch_size: 256
-test_stride: 256
+test_stride: 128
 test_kwargs:
   shuffle: False
   pin_memory: True
