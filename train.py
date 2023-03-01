@@ -342,6 +342,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_dataset', type=str, required=True)
     parser.add_argument('--exclude_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
+    parser.add_argument('--patch_size', type=int, default=256)
 
     args = parser.parse_args()
 
@@ -452,9 +453,13 @@ if __name__ == '__main__':
         train_config['apply_threshold_to_valid'] = False
 
     if args.overlap_test == 'true':
-        train_config['test_stride'] = 128
+        train_config['test_stride'] = args.patch_size // 2
     else:
-        train_config['test_stride'] = 256
+        train_config['test_stride'] = args.patch_size
+
+    train_config['train_patch_size'] = args.patch_size
+    train_config['valid_patch_size'] = args.patch_size
+    train_config['test_patch_size'] = args.patch_size
 
     set_seed(args.seed)
 

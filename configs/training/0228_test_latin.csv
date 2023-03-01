@@ -1,0 +1,2 @@
+att,ema_rates,loss,merge,n_blocks,operation,resume,sche,sche_kwargs,skip,test,transform,unet
+none,-1,charbonnier,false,6,ffc,none,cosine,dict(),cat,DIBCO18,latin,2

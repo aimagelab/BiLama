@@ -16,6 +16,7 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks "@
               --resume "@{resume|none}" --ema_rate "@{ema_rates|-1}" \
               --loss "@{loss|charbonnier}" --merge_image "@{merge|false}" \
               --train_transform_variant "@{transform|latin}" --lr_scheduler_warmup 10 \
+              --epochs @{epochs|500} --patch_size @{patch_size|256} \
               --datasets \
               /scratch/fquattrini/binarization_datasets/DIBCO09 \
               /scratch/fquattrini/binarization_datasets/DIBCO10 \
@@ -31,7 +32,8 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks "@
               /scratch/fquattrini/binarization_datasets/BickleyDiary \
               /scratch/fquattrini/binarization_datasets/SMADI \
               /scratch/fquattrini/binarization_datasets/Nabuco \
-              --test_dataset "@{test|DIBCO18}"
+              --test_dataset "@{test|DIBCO18}" \
+              --validation_dataset DIBCO16
 
 #              /scratch/fquattrini/binarization_datasets/PHIBD \
 #              /scratch/fquattrini/binarization_datasets/DIBCO19 \
