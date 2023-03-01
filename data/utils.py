@@ -66,12 +66,13 @@ def get_patches(image_source: Image, patch_size: int, stride: int):
     return np.array(image_patches), num_rows, num_cols
 
 
-def reconstruct_ground_truth(patches, original, num_rows, config, patch_size=256):
+def reconstruct_ground_truth(patches, original, num_rows, config):
     channels = 1
     batch_size = 1
+    patch_size = config['test_patch_size']
     stride = config['test_stride']
 
-    if stride == 128:
+    if stride == (patch_size // 2):
         _, _, width, height = original.shape
 
         x_steps = [x + (stride // 2) for x in range(0, width, stride)]
