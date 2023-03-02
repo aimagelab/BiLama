@@ -44,7 +44,7 @@ def main(path):
     print(f'Average: {average}')
 
     with open(path / 'results.csv', 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames='id' + keys)
+        writer = csv.DictWriter(csvfile, fieldnames=['id'] + list(keys))
         writer.writeheader()
         for id in sorted(results.keys()):
             results[id]['id'] = id
