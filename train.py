@@ -203,16 +203,16 @@ def train(config_args, config):
                     wandb_logs['valid/avg_psnr'] = valid_metrics['psnr']
                     wandb_logs['valid/patience'] = patience
 
-                    if valid_metrics['psnr'] > trainer.best_psnr:
-                        trainer.best_psnr = valid_metrics['psnr']
-                        wandb_logs['test/best_psnr_wrt_valid'] = wandb_logs['test/avg_psnr']
-
                     trainer.psnr_list.append(valid_metrics['psnr'])
                     psnr_running_mean = sum(trainer.psnr_list[-3:]) / len(trainer.psnr_list[-3:])
                     reset_patience = False
+                    if valid_metrics['psnr'] > trainer.best_psnr:
+                        trainer.best_psnr = valid_metrics['psnr']
+                        wandb_logs['test/best_psnr_wrt_valid'] = wandb_logs['test/avg_psnr']
+                        reset_patience = True
                     if psnr_running_mean > trainer.best_psnr_running_mean:
                         trainer.best_psnr_running_mean = psnr_running_mean
-                        reset_patience = True
+
                     wandb_logs['Best PSNR Running Mean'] = trainer.best_psnr_running_mean
                     wandb_logs['Psnr Running Mean'] = psnr_running_mean
                     wandb_logs['Best PSNR'] = trainer.best_psnr
@@ -243,7 +243,11 @@ def train(config_args, config):
 
                         logger.info(f"Saving best model (valid) with valid_PSNR: {trainer.best_psnr:.02f}" +
                                     f" and test_PSNR: {trainer.best_psnr_running_mean:.02f}...")
-                        trainer.save_checkpoints(filename=config_args.experiment_name + '_best_psnr')
+
+                        if epoch > 10:
+                            trainer.save_checkpoints(
+                                filename=config_args.experiment_name + f'{trainer.best_psnr:.02f}_best_psnr'
+                            )
 
                         # Save images
                         # names = images.keys()
