@@ -134,9 +134,10 @@ class LaMaTrainingModule:
         if self.checkpoint is not None:
             self.optimizer.load_state_dict(self.checkpoint['optimizer'])
             if 'lr_scheduler' in self.checkpoint:
-                self.lr_scheduler = make_lr_scheduler(config['lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'],
-                                                      config['lr_scheduler_warmup'], config)
-                self.lr_scheduler.load_state_dict(self.checkpoint['lr_scheduler'])
+                if self.checkpoint['lr_scheduler'] is not None:
+                    self.lr_scheduler = make_lr_scheduler(config['lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'],
+                                                          config['lr_scheduler_warmup'], config)
+                    self.lr_scheduler.load_state_dict(self.checkpoint['lr_scheduler'])
             self.logger.info(f"Loaded pretrained checkpoint model from \"{config['resume']}\"")
 
         # self.criterion = self.criterion.to(self.device)
