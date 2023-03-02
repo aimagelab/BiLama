@@ -28,33 +28,35 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to run this code.'
 
 
-def binarize_for_competition(config_args, config):
-    save_folder = Path('/home/fquattrini/BiLama_binarization_results_bak') / config_args.experiment_name
-    save_folder.mkdir(exist_ok=True, parents=True)
+def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[256]):
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
     tmp_config = config.copy()
-    tmp_config['test_stride'] = 256
-    tmp_config['test_data_path'] = test_dataset_path
-    test_dataset = make_test_dataset(tmp_config)
-    test_data_loader = make_test_dataloader(test_dataset, tmp_config)
-    trainer.model.eval()
-    with torch.no_grad():
-        for i, item in enumerate(test_data_loader):
-            image_name = item['image_name'][0]
-            validator = Validator(apply_threshold=True, threshold=0.5)
-            test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-            images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
-            images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
-            images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
+    for patch_size, stride in zip(patch_sizes, strides):
+        save_folder = Path('/home/fquattrini/BiLama_binarization_results') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
+        print(f'Saving results in {save_folder}')
+        save_folder.mkdir(exist_ok=True, parents=True)
+        tmp_config['test_stride'] = stride
+        tmp_config['test_patch_size'] = patch_size
+        tmp_config['test_data_path'] = test_dataset_path
+        trainer.config = tmp_config
+        test_dataset = make_test_dataset(tmp_config)
+        test_data_loader = make_test_dataloader(test_dataset, tmp_config)
+        trainer.model.eval()
+        validator = Validator(apply_threshold=True, threshold=0.5)
+        with torch.no_grad():
+            for i, item in enumerate(test_data_loader):
+                image_name = item['image_name'][0]
+                test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-    avg_metrics = validator.get_metrics()
-    print(f'Resulting PSNR for the images: {avg_metrics["psnr"]:.2f}')
+                images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
+                images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
+                images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
-    trainer.model.train()
-    exit()
+        avg_metrics = validator.get_metrics()
+        print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
 
 
 if __name__ == '__main__':
@@ -113,10 +115,11 @@ if __name__ == '__main__':
 
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
-        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth.bak"))
+        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
-        train_config['resume'] = checkpoints[0]
-        args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
+        id_to_keep = 1
+        train_config['resume'] = checkpoints[id_to_keep]
+        args.experiment_name = checkpoints[id_to_keep].stem
 
     if args.experiment_name is None:
         exp_name = [
@@ -199,7 +202,10 @@ if __name__ == '__main__':
         train_config['apply_threshold_to_valid'] = False
 
     set_seed(args.seed)
-
-    binarize_for_competition(args, train_config)
+    patches_sizes = list(range(128, 512+256, 64))
+    strides = list(patch_size // 2 for patch_size in patches_sizes)
+    patches_sizes += range(128, 512 + 256, 64)
+    strides += range(128, 512 + 256, 64)
+    binarize_for_competition(args, train_config, patches_sizes, strides)
     sys.exit()
 
