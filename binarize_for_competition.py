@@ -33,30 +33,38 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
     tmp_config = config.copy()
+    data = {'checkpoint': config['resume'].name}
 
     for patch_size, stride in zip(patch_sizes, strides):
-        save_folder = Path('/home/fquattrini/BiLama_binarization_results') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
-        print(f'Saving results in {save_folder}')
-        save_folder.mkdir(exist_ok=True, parents=True)
-        tmp_config['test_stride'] = stride
-        tmp_config['test_patch_size'] = patch_size
-        tmp_config['test_data_path'] = test_dataset_path
-        trainer.config = tmp_config
-        test_dataset = make_test_dataset(tmp_config)
-        test_data_loader = make_test_dataloader(test_dataset, tmp_config)
-        trainer.model.eval()
-        validator = Validator(apply_threshold=True, threshold=0.5)
-        with torch.no_grad():
-            for i, item in enumerate(test_data_loader):
-                image_name = item['image_name'][0]
-                test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
+        try:
+            save_folder = Path('/home/fquattrini/BiLama_binarization_results_20230503') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
+            print(f'Saving results in {save_folder}')
+            save_folder.mkdir(exist_ok=True, parents=True)
+            tmp_config['test_stride'] = stride
+            tmp_config['test_patch_size'] = patch_size
+            tmp_config['test_data_path'] = test_dataset_path
+            trainer.config = tmp_config
+            test_dataset = make_test_dataset(tmp_config)
+            test_data_loader = make_test_dataloader(test_dataset, tmp_config)
+            trainer.model.eval()
+            validator = Validator(apply_threshold=True, threshold=0.5)
+            with torch.no_grad():
+                for i, item in enumerate(test_data_loader):
+                    image_name = item['image_name'][0]
+                    test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-                images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
-                images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
-                images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
+                    images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
+                    images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
+                    images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
-        avg_metrics = validator.get_metrics()
-        print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
+            avg_metrics = validator.get_metrics()
+            data[f'{patch_size}_{stride}'] = avg_metrics['psnr']
+            print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
+        except Exception as e:
+            print(f'Error while binarizing for {patch_size=} {stride=}')
+            traceback.print_exc()
+            continue
+    return data
 
 
 if __name__ == '__main__':
@@ -78,7 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
     parser.add_argument('--skip', type=str, default='none', choices=['none', 'add', 'cat'])
-    parser.add_argument('--resume', type=str, default='none')
+    parser.add_argument('--resume_ids', type=str, nargs='+', required=True)
     parser.add_argument('--wandb_dir', type=str, default='/tmp')
     parser.add_argument('--unet_layers', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=500)
@@ -112,14 +120,6 @@ if __name__ == '__main__':
 
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
-
-    if args.resume != 'none':
-        checkpoint_path = Path(train_config['path_checkpoint'])
-        checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
-        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
-        id_to_keep = 1
-        train_config['resume'] = checkpoints[id_to_keep]
-        args.experiment_name = checkpoints[id_to_keep].stem
 
     if args.experiment_name is None:
         exp_name = [
@@ -202,10 +202,30 @@ if __name__ == '__main__':
         train_config['apply_threshold_to_valid'] = False
 
     set_seed(args.seed)
-    patches_sizes = list(range(128, 512+256, 64))
+    min_patch_size = 128
+    max_patch_size = 512 + 256
+    offset = 64
+    patches_sizes = list(range(min_patch_size, max_patch_size, offset))
     strides = list(patch_size // 2 for patch_size in patches_sizes)
-    patches_sizes += range(128, 512 + 256, 64)
-    strides += range(128, 512 + 256, 64)
-    binarize_for_competition(args, train_config, patches_sizes, strides)
+    patches_sizes += range(min_patch_size, max_patch_size, offset)
+    strides += range(min_patch_size, max_patch_size, offset)
+
+    checkpoint_path = Path(train_config['path_checkpoint'])
+    results = []
+    for resume_id in args.resume_ids:
+        checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*best*.pth"))
+        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
+        for checkpoint in checkpoints:
+            train_config['resume'] = checkpoint
+            args.experiment_name = checkpoint.stem
+            print(f"Running {args.experiment_name} \n")
+            results.append(binarize_for_competition(args, train_config, patches_sizes, strides))
+            print(f"---------------------------------------------------------------------\n")
+
+    resume_ids = [str(resume_id) for resume_id in args.resume_ids]
+    with open(f'/home/shared/patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
+        writer.writeheader()
+        writer.writerows(results)
     sys.exit()
 
