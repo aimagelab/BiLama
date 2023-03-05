@@ -33,7 +33,7 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
     tmp_config = config.copy()
-    data = {'checkpoint': config['resume'].name}
+    data = {'checkpoint': config['resume'].name, 'test_dataset': Path(test_dataset_path[0]).name}
 
     for patch_size, stride in zip(patch_sizes, strides):
         try:
@@ -58,8 +58,14 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
                     images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
             avg_metrics = validator.get_metrics()
-            data[f'{patch_size}_{stride}'] = avg_metrics['psnr']
+            data[f'PS{patch_size}_S{stride}'] = avg_metrics['psnr']
             print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
+
+            with open(f'patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=data.keys())
+                writer.writeheader()
+                writer.writerows(results)
+
         except Exception as e:
             print(f'Error while binarizing for {patch_size=} {stride=}')
             traceback.print_exc()
@@ -108,7 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
-    parser.add_argument('--test_dataset', type=str, required=True)
+    parser.add_argument('--test_dataset', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
 
@@ -151,12 +157,10 @@ if __name__ == '__main__':
     train_config['seed'] = args.seed
     if args.attention == 'self':
         raise NotImplementedError('Self attention is not implemented yet')
-    args.train_data_path = [dataset for dataset in args.datasets if not dataset.endswith(args.test_dataset)]
-    args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(args.test_dataset)]
+    args.train_data_path = [dataset for dataset in args.datasets]
+
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.train_data_path
-    train_config['test_data_path'] = args.test_data_path
-    assert len(train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"
     train_config['merge_image'] = args.merge_image == 'true'
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
@@ -216,6 +220,12 @@ if __name__ == '__main__':
         checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*best*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         for checkpoint in checkpoints:
+            loaded_checkpoint = torch.load(checkpoint)
+            test_dataset_name = Path(loaded_checkpoint['config']['test_data_path'][0]).name
+            args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(test_dataset_name)]
+            train_config['test_data_path'] = args.test_data_path
+            assert len(
+                train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"
             train_config['resume'] = checkpoint
             args.experiment_name = checkpoint.stem
             print(f"Running {args.experiment_name} \n")
@@ -223,7 +233,7 @@ if __name__ == '__main__':
             print(f"---------------------------------------------------------------------\n")
 
     resume_ids = [str(resume_id) for resume_id in args.resume_ids]
-    with open(f'/home/shared/patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
+    with open(f'/home/shared/all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
