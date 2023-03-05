@@ -61,15 +61,15 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
             data[f'PS{patch_size}_S{stride}'] = avg_metrics['psnr']
             print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
 
-            with open(f'patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=data.keys())
-                writer.writeheader()
-                writer.writerows(results)
-
         except Exception as e:
             print(f'Error while binarizing for {patch_size=} {stride=}')
             traceback.print_exc()
             continue
+
+    with open(f'patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=data.keys())
+        writer.writeheader()
+        writer.writerows(results)
     return data
 
 
