@@ -1,0 +1,6 @@
+loss,n_blocks,name,operation,unet_layers,test,valid
+charbonnier,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO18,DIBCO16
+charbonnier,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO17,DIBCO16
+charbonnier,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO12,DIBCO16
+charbonnier,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO11,DIBCO16
+charbonnier,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},conv,2,DIBCO18,DIBCO16

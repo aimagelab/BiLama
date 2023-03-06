@@ -326,9 +326,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
     parser.add_argument('--apply_threshold_to', type=str, default='test', choices=['none', 'val_test', 'test', 'all'])
-    parser.add_argument('--loss', type=str, nargs='+', default=['binary_cross_entropy'],
-                        choices=['mean_square_error', 'cross_entropy', 'negative_log_likelihood',
-                                 'custom_mse', 'charbonnier', 'binary_cross_entropy'])
+    parser.add_argument('--loss', type=str, nargs='+', default=['CHAR'],
+                        choices=['MSE', 'MAE', 'CHAR', 'BCE'])
     parser.add_argument('--lr', type=float, default=1.5e-4)
     parser.add_argument('--lr_min', type=float, default=1.5e-5)
     parser.add_argument('--lr_scheduler', type=str, default='constant',

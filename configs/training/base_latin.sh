@@ -4,7 +4,7 @@
 #SBATCH -e /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_new_%j.err
 #SBATCH -o /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_new_%j.out
 #SBATCH --mem=24G
-#SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio,germano,gervasoni,pippobaudo,rezzonico,ajeje,helmut,lurcanio
+#SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio
 #SBATCH -J bilama_new
 
 cd /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama || exit
@@ -12,7 +12,7 @@ echo "@{name}"
 scontrol update JobID="$SLURM_JOB_ID" name="@{n_blocks}_@{operation}_@{sche}_@{loss}"
 srun /homes/$(whoami)/.conda/envs/LaMa/bin/python train.py -c base --n_blocks "@{n_blocks|6}" \
               --operation "@{operation|ffc}" --attention "@{att|none}" --num_workers 2 \
-              --epochs 500 --skip "@{skip|cat}" --unet_layers "@{unet|2}" \
+              --epochs 500 --skip "@{skip|add}" --unet_layers "@{unet|0}" \
               --lr_scheduler "@{sche|cosine}" --lr_scheduler_kwargs "@{sche_kwargs|dict()}" \
               --resume "@{resume|none}" --ema_rate "@{ema_rates|-1}" \
               --loss "@{loss|charbonnier}" --merge_image "@{merge|false}" \

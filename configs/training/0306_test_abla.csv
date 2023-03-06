@@ -1,0 +1,4 @@
+loss,n_blocks,name,operation,unet_layers,test,valid
+BCE,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO18,DIBCO16
+MSE,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO18,DIBCO16
+MAE,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,2,DIBCO18,DIBCO16

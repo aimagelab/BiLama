@@ -1,0 +1,5 @@
+ema_rates,epochs,loss,merge,n_blocks,operation,patch_size,resume,sche,sche_kwargs,skip,test,transform,unet
+-1,500,charbonnier,true,6,ffc,256,none,cosine,dict(),cat,DIBCO18,latin,2
+-1,500,charbonnier,true,6,ffc,384,none,cosine,dict(),cat,DIBCO18,latin,2
+-1,300,charbonnier,false,6,ffc,256,none,cosine,dict(),cat,DIBCO18,latin,2
+-1,500,binary_cross_entropy,false,6,ffc,256,none,cosine,dict(),cat,DIBCO18,latin,2

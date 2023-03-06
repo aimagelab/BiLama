@@ -22,12 +22,12 @@ class MultiLoss(torch.nn.Module):
 def make_criterion(losses: str):
     criterion = MultiLoss()
     loss_dict = {
-        'mean_square_error': (torch.nn.MSELoss(), 1.0),
-        'cross_entropy': (torch.nn.CrossEntropyLoss(), 1.0),
-        'negative_log_likelihood': (torch.nn.NLLLoss(), 1.0),
-        'binary_cross_entropy': (torch.nn.BCEWithLogitsLoss(), 1.0),
-        'custom_mse': (LMSELoss(), 1.0),
-        'charbonnier': (CharbonnierLoss(), 4.0),
+        'MSE': (torch.nn.MSELoss(), 1.0),
+        'MAE': (torch.nn.L1Loss(), 1.0),
+        'NLL': (torch.nn.NLLLoss(), 1.0),
+        'BCE': (torch.nn.BCEWithLogitsLoss(), 1.0),
+        'cMSE': (LMSELoss(), 1.0),
+        'CHAR': (CharbonnierLoss(), 4.0),
     }
     for loss in losses:
         if loss in loss_dict:

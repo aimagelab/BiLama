@@ -1,0 +1,2 @@
+loss,n_blocks,name,operation,test,unet_layers,valid
+CHAR,3,@{n_blocks}_@{operation}_@{loss}_@{test}_@{valid},ffc,DIBCO14,2,DIBCO16
