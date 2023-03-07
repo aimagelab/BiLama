@@ -30,46 +30,48 @@ assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to ru
 
 def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[256]):
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
+    trainer.config['train_batch_size'] = config_args.batch_size
     test_dataset_path = config['test_data_path']
     print(f'Loading {test_dataset_path}')
     tmp_config = config.copy()
     data = {'checkpoint': config['resume'].name, 'test_dataset': Path(test_dataset_path[0]).name}
 
     for patch_size, stride in zip(patch_sizes, strides):
-        try:
-            save_folder = Path('/home/fquattrini/BiLama_binarization_results_20230503') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
-            print(f'Saving results in {save_folder}')
-            save_folder.mkdir(exist_ok=True, parents=True)
-            tmp_config['test_stride'] = stride
-            tmp_config['test_patch_size'] = patch_size
-            tmp_config['test_data_path'] = test_dataset_path
-            trainer.config = tmp_config
-            test_dataset = make_test_dataset(tmp_config)
-            test_data_loader = make_test_dataloader(test_dataset, tmp_config)
-            trainer.model.eval()
-            validator = Validator(apply_threshold=True, threshold=0.5)
-            with torch.no_grad():
-                for i, item in enumerate(test_data_loader):
-                    image_name = item['image_name'][0]
-                    test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
+        # try:
+        save_folder = Path(f'{args.outputs_path}BiLama_binarization_results_20230507') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
+        print(f'Saving results in {save_folder}')
+        save_folder.mkdir(exist_ok=True, parents=True)
+        tmp_config['test_stride'] = stride
+        tmp_config['test_patch_size'] = patch_size
+        tmp_config['test_data_path'] = test_dataset_path
+        trainer.config = tmp_config
+        test_dataset = make_test_dataset(tmp_config)
+        test_data_loader = make_test_dataloader(test_dataset, tmp_config)
+        trainer.model.eval()
+        validator = Validator(apply_threshold=True, threshold=0.5)
+        with torch.no_grad():
+            for i, item in enumerate(test_data_loader):
+                image_name = item['image_name'][0]
+                test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-                    images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
-                    images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
-                    images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
+                images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
+                images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
+                images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
 
-            avg_metrics = validator.get_metrics()
-            data[f'PS{patch_size}_S{stride}'] = avg_metrics['psnr']
-            print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
+        avg_metrics = validator.get_metrics()
+        data[f'PS{patch_size}_S{stride}'] = avg_metrics['psnr']
+        print(f'Resulting PSNR {patch_size=} {stride=} for the images: {avg_metrics["psnr"]:.4f}\n\n')
 
-        except Exception as e:
-            print(f'Error while binarizing for {patch_size=} {stride=}')
-            traceback.print_exc()
-            continue
+        # except Exception as e:
+        #     print(f'Error while binarizing for {patch_size=} {stride=}')
+        #     traceback.print_exc()
+        #     continue
 
-    with open(f'patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
+    print(f'Writing results to csv file: {args.outputs_path}20230507_patch_size_stride_sweep_{config["resume"].name}.csv')
+    with open(f'{args.outputs_path}20230507_patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=data.keys())
         writer.writeheader()
-        writer.writerows(results)
+        writer.writerow(data)
     return data
 
 
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--experiment_name', metavar='<name>', type=str,
                         help=f"The experiment name which will use on WandB")
     parser.add_argument('-c', '--configuration', metavar='<name>', type=str,
-                        help=f"The configuration name will use on WandB", default="base_bevagna")
+                        help=f"The configuration name will use on WandB", default="base")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none',
@@ -89,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_blocks', type=int, default=9)
     parser.add_argument('--n_downsampling', type=int, default=3)
     parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--operation', type=str, default='ffc', choices=['ffc', 'conv'])
     parser.add_argument('--skip', type=str, default='none', choices=['none', 'add', 'cat'])
     parser.add_argument('--resume_ids', type=str, nargs='+', required=True)
@@ -115,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
     parser.add_argument('--test_dataset', type=str, nargs='+', required=True)
+    parser.add_argument('--outputs_path', type=str, required=True)
 
     args = parser.parse_args()
 
@@ -211,8 +214,8 @@ if __name__ == '__main__':
     offset = 64
     patches_sizes = list(range(min_patch_size, max_patch_size, offset))
     strides = list(patch_size // 2 for patch_size in patches_sizes)
-    patches_sizes += range(min_patch_size, max_patch_size, offset)
-    strides += range(min_patch_size, max_patch_size, offset)
+    patches_sizes += list(range(min_patch_size, max_patch_size, offset))
+    strides += list(range(min_patch_size, max_patch_size, offset))
 
     checkpoint_path = Path(train_config['path_checkpoint'])
     results = []
@@ -232,10 +235,12 @@ if __name__ == '__main__':
             results.append(binarize_for_competition(args, train_config, patches_sizes, strides))
             print(f"---------------------------------------------------------------------\n")
 
+    print(f"Saving results to {args.outputs_path}20230507_all_patch_size_stride_sweep_{'_'.join(args.resume_ids)}.csv")
     resume_ids = [str(resume_id) for resume_id in args.resume_ids]
-    with open(f'/home/shared/all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
+    with open(f'{args.outputs_path}20230507_all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
+    print(f"Done! \n")
     sys.exit()
 
