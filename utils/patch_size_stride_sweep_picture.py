@@ -48,7 +48,9 @@ def main(path):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.legend()
+    plt.savefig('ffc_vs_conv.pdf')
     plt.show()
+
 
 
 if __name__ == '__main__':
