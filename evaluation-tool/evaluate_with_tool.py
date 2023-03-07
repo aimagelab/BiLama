@@ -55,9 +55,11 @@ if __name__ == "__main__":
     weights_exe_path = Path('evaluation-tool/BinEvalWeights/BinEvalWeights.exe')
     metrics_exe_path = Path('evaluation-tool/DIBCO_metrics/DIBCO_metrics.exe')
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', metavar='<path>', type=str)
+    parser.add_argument('--paths', type=str, nargs='+', required=True)
     args = parser.parse_args()
-    path = Path(args.path)
-
     os.environ['PATH'] = 'C:\\Program Files\\MATLAB\\MATLAB Runtime\\v90\\runtime\\win64' + ';' + os.environ['PATH']
-    main(path)
+
+    for path in args.paths:
+        path_ = Path(path)
+        print(f'Processing {path_}')
+        main(path_)
