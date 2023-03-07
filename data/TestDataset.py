@@ -3,6 +3,7 @@ from pathlib import Path
 import torchvision.transforms.functional as functional
 from PIL import Image
 from torch.utils.data import Dataset
+import math
 
 from data.utils import get_path
 
@@ -48,13 +49,27 @@ class TestDataset(Dataset):
             sample = Image.open(self.imgs[index]).convert("RGB")
             gt_sample = Image.open(self.gt_imgs[index]).convert("L")
 
-        # Create patches
+        # Create patches OLD
+        # padding_width = ((sample.width // self.patch_size) + 1) * self.patch_size
+        # padding_height = ((sample.height // self.patch_size) + 1) * self.patch_size
+        # # padding_width = max(padding_width, self.patch_size * 2 - sample.width)
+        # # padding_height = max(padding_height, self.patch_size * 2 - sample.height)
+        # padding_bottom = padding_height - sample.height
+        # padding_up = math.ceil(padding_bottom / 2)
+        # padding_bottom = math.floor(padding_bottom / 2)
+        # padding_right = padding_width - sample.width
+        # padding_left = math.ceil(padding_right / 2)
+        # padding_right = math.floor(padding_right / 2)
+
         padding_bottom = ((sample.height // self.patch_size) + 1) * self.patch_size - sample.height
         padding_right = ((sample.width // self.patch_size) + 1) * self.patch_size - sample.width
 
         tensor_padding = functional.to_tensor(sample).unsqueeze(0)
         batch, channels, _, _ = tensor_padding.shape
+
         tensor_padding = functional.pad(img=tensor_padding, padding=[0, 0, padding_right, padding_bottom], fill=1)
+        # tensor_padding = functional.pad(img=tensor_padding,
+        #                                 padding=[padding_left, padding_up, padding_right, padding_bottom], fill=1)
         patches = tensor_padding.unfold(2, self.patch_size, self.stride).unfold(3, self.patch_size, self.stride)
         num_rows = patches.shape[3]
         patches = patches.reshape(batch, channels, -1, self.patch_size, self.patch_size)
