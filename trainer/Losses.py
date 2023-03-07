@@ -28,6 +28,8 @@ def make_criterion(losses: str):
         'BCE': (torch.nn.BCEWithLogitsLoss(), 1.0),
         'cMSE': (LMSELoss(), 1.0),
         'CHAR': (CharbonnierLoss(), 4.0),
+
+        'charbonnier': (CharbonnierLoss(), 4.0),
     }
     for loss in losses:
         if loss in loss_dict:
