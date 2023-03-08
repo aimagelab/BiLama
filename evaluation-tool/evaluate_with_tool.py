@@ -39,7 +39,7 @@ def main(path):
         results[id] = output
 
     keys = list(results.values())[0].keys()
-    average = {k: sum([v[k] for v in results.values()]) / len(results) for k in keys}
+    average = {k: sum([v[k] for v in results.values() if k in v]) / len(results) for k in keys}
     results['average'] = average
     print(f'Average: {average}')
 
