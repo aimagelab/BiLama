@@ -38,7 +38,7 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
 
     for patch_size, stride in zip(patch_sizes, strides):
         # try:
-        save_folder = Path(f'{args.outputs_path}BiLama_binarization_results_20230507') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
+        save_folder = Path(f'{args.outputs_path}BiLama_binarization_results_20230508') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
         print(f'Saving results in {save_folder}')
         save_folder.mkdir(exist_ok=True, parents=True)
         tmp_config['test_stride'] = stride
@@ -67,8 +67,8 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
         #     traceback.print_exc()
         #     continue
 
-    print(f'Writing results to csv file: {args.outputs_path}20230507_patch_size_stride_sweep_{config["resume"].name}.csv')
-    with open(f'{args.outputs_path}20230507_patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
+    print(f'Writing results to csv file: {args.outputs_path}20230508_patch_size_stride_sweep_{config["resume"].name}.csv')
+    with open(f'{args.outputs_path}20230508_patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=data.keys())
         writer.writeheader()
         writer.writerow(data)
@@ -116,7 +116,8 @@ if __name__ == '__main__':
     parser.add_argument('--merge_image', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
-    parser.add_argument('--test_dataset', type=str, nargs='+', required=True)
+    parser.add_argument('--test_dataset', type=str, required=True)
+    parser.add_argument('--use_specified_test_dataset', type=str, default='true', choices=['true', 'false'])
     parser.add_argument('--outputs_path', type=str, required=True)
 
     args = parser.parse_args()
@@ -217,27 +218,32 @@ if __name__ == '__main__':
     patches_sizes += list(range(min_patch_size, max_patch_size, offset))
     strides += list(range(min_patch_size, max_patch_size, offset))
 
+    if args.use_specified_test_dataset == 'true':
+        datasets = {Path(dataset).name: dataset for dataset in args.datasets}
+        args.test_data_path = [datasets[args.test_dataset]]
     checkpoint_path = Path(train_config['path_checkpoint'])
     results = []
-    for resume_id in args.resume_ids:
+    for i, resume_id in enumerate(args.resume_ids):
         checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*best*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
-        for checkpoint in checkpoints:
-            loaded_checkpoint = torch.load(checkpoint)
-            test_dataset_name = Path(loaded_checkpoint['config']['test_data_path'][0]).name
-            args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(test_dataset_name)]
+        for j, checkpoint in enumerate(checkpoints):
+            if not args.use_specified_test_dataset == 'true':
+                loaded_checkpoint = torch.load(checkpoint)
+                test_dataset_name = Path(loaded_checkpoint['config']['test_data_path'][0]).name
+                args.test_data_path = [dataset for dataset in args.datasets if dataset.endswith(test_dataset_name)]
             train_config['test_data_path'] = args.test_data_path
             assert len(
                 train_config['test_data_path']) > 0, f"Test dataset {args.test_dataset} not found in {args.datasets}"
             train_config['resume'] = checkpoint
             args.experiment_name = checkpoint.stem
-            print(f"Running {args.experiment_name} \n")
+            print(f"---------------------------------------------------------------------\n")
+            print(f"[{i}]/[{len(args.resume_ids)}]-[{j}]/[{len(checkpoints)}] -- Running {args.experiment_name} \n")
             results.append(binarize_for_competition(args, train_config, patches_sizes, strides))
             print(f"---------------------------------------------------------------------\n")
 
-    print(f"Saving results to {args.outputs_path}20230507_all_patch_size_stride_sweep_{'_'.join(args.resume_ids)}.csv")
+    print(f"Saving results to {args.outputs_path}20230508_all_patch_size_stride_sweep_{'_'.join(args.resume_ids)}.csv")
     resume_ids = [str(resume_id) for resume_id in args.resume_ids]
-    with open(f'{args.outputs_path}20230507_all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
+    with open(f'{args.outputs_path}20230508_all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
