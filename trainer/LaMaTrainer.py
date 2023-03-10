@@ -51,7 +51,7 @@ class LaMaTrainingModule:
         self.checkpoint = None
 
         if 'resume' in self.config:
-            self.checkpoint = torch.load(config['resume'])
+            self.checkpoint = torch.load(config['resume'], map_location=device)
             checkpoint_config = self.checkpoint['config'] if 'config' in self.checkpoint else {}
             if 'train_data_path' in checkpoint_config: del checkpoint_config['train_data_path']
             if 'valid_data_path' in checkpoint_config: del checkpoint_config['valid_data_path']
@@ -60,10 +60,10 @@ class LaMaTrainingModule:
             config = self.config
 
         self.training_only_with_patch_square = False
-        if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
-            self.training_only_with_patch_square = True
-
         if make_loaders:
+            if len(config['train_data_path']) == 1 and 'patch_square' in config['train_data_path'][0]:
+                self.training_only_with_patch_square = True
+
             self.train_dataset = make_train_dataset(config, self.training_only_with_patch_square)
             self.valid_dataset = make_val_dataset(config, self.training_only_with_patch_square)
             self.test_dataset = make_test_dataset(config)
@@ -269,7 +269,7 @@ class LaMaTrainingModule:
         images = {}
         validator = Validator(apply_threshold=self.config['apply_threshold_to_test'], threshold=threshold)
 
-        for item in self.test_data_loader:
+        for i, item in enumerate(self.test_data_loader):
             test_loss_item, validator, images_item = self.eval_item(item, validator, threshold)
             test_loss += test_loss_item
             images.update(images_item)
@@ -279,6 +279,17 @@ class LaMaTrainingModule:
 
         self.model.train()
         return avg_metrics, avg_loss, images
+
+    @torch.no_grad()
+    def folder_test(self):
+        self.model.eval()
+        threshold = self.config['threshold']
+
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_test'], threshold=threshold)
+
+        for i, item in enumerate(self.test_data_loader):
+            _, _, images_item = self.eval_item(item, validator, threshold)
+            yield images_item
 
     @torch.no_grad()
     def validation(self):
