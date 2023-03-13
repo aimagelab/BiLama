@@ -14,9 +14,12 @@ def run_process(exe):
     return proc.stdout
 
 
-def main(path):
-    pred = {p.stem.split('_')[0]: p for p in path.glob('*pred*.png')}
-    gt = {p.stem.split('_')[0]: p for p in path.glob('*gt*.png')}
+def main(gt_path, p_path):
+    # gt_path = Path("C:\Users\\fabio\Downloads\docentrd19\gt_imgs")
+    # pred_path = Path("C:\Users\\fabio\Downloads\docentrd19\DIBCO19b")
+
+    pred = {p.stem.split('_')[0]: p for p in p_path.glob('*pred*.png')}
+    gt = {p.stem.split('_')[0]: p for p in gt_path.glob('*gt*.png')}
     assert len(pred) == len(gt) and all(k in gt for k in pred.keys())
 
     results = {}
@@ -43,7 +46,7 @@ def main(path):
     results['average'] = average
     print(f'Average: {average}')
 
-    with open(path / 'results.csv', 'w', newline='') as csvfile:
+    with open(p_path / 'results.csv', 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['id'] + list(keys))
         writer.writeheader()
         for id in sorted(results.keys()):
@@ -55,11 +58,13 @@ if __name__ == "__main__":
     weights_exe_path = Path('evaluation-tool/BinEvalWeights/BinEvalWeights.exe')
     metrics_exe_path = Path('evaluation-tool/DIBCO_metrics/DIBCO_metrics.exe')
     parser = argparse.ArgumentParser()
+    parser.add_argument('--gt_path', type=str)
     parser.add_argument('--paths', type=str, nargs='+', required=True)
     args = parser.parse_args()
     os.environ['PATH'] = 'C:\\Program Files\\MATLAB\\MATLAB Runtime\\v90\\runtime\\win64' + ';' + os.environ['PATH']
 
     for path in args.paths:
-        path_ = Path(path)
-        print(f'Processing {path_}')
-        main(path_)
+        if not args.gt_path:
+            args.gt_path = path
+        print(f'Processing {path}')
+        main(Path(args.gt_path), Path(path))
