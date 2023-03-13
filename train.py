@@ -346,6 +346,7 @@ if __name__ == '__main__':
     parser.add_argument('--exclude_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--patch_size', type=int, default=256)
+    parser.add_argument('--patch_size_raw', type=int)
 
     args = parser.parse_args()
 
@@ -461,6 +462,7 @@ if __name__ == '__main__':
         train_config['test_stride'] = args.patch_size
 
     train_config['train_patch_size'] = args.patch_size
+    train_config['train_patch_size_raw'] = args.patch_size_raw if args.patch_size_raw else args.patch_size + 128
     train_config['valid_patch_size'] = args.patch_size
     train_config['test_patch_size'] = args.patch_size
 

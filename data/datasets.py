@@ -39,7 +39,7 @@ def make_train_dataset(config: dict, training_only_with_patch_square=False):
                 TrainingDataset(
                     data_path=data_path,
                     split_size=patch_size,
-                    patch_size=patch_size + 128,
+                    patch_size=config['train_patch_size_raw'],
                     transform=transform,
                     load_data=load_data,
                     merge_image=merge_image))
