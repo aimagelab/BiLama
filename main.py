@@ -29,20 +29,19 @@ if __name__ == '__main__':
     path_config = os.path.join(root_dir, 'configs/create_patches.yaml')
     args = configure_args(path_config)
     datasets = [
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO09/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/DIBCO10/train',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO09',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO10',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO11',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO12',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO13',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO14',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO16',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO17',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO18',
+        '/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO19',
         '/mnt/beegfs/scratch/fquattrini/binarization_datasets/Nabuco',
         '/mnt/beegfs/scratch/fquattrini/binarization_datasets/SMADI',
         '/mnt/beegfs/scratch/fquattrini/binarization_datasets/BickleyDiary',
-        '/mnt/beegfs/scratch/fquattrini/binarization_datasets/PHIBD'
     ]
     for dataset in datasets:
         args.path_destination = dataset
