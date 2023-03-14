@@ -45,8 +45,8 @@ class PatchImage:
     def create_patches(self, root_original: str, root_ground_truth: str, test_dataset, validation_dataset):
         logging.info("Start process ...")
         root_original = Path(root_original)
-        gt = root_original / 'gt_imgs'
-        imgs = root_original / 'imgs'
+        gt = root_original / 'test' / 'gt_imgs'
+        imgs = root_original / 'test' /'imgs'
 
         # path_imgs = list(imgs.rglob('*.png')) + list(imgs.rglob('*.jpg')) + list(imgs.rglob('*.bmp') )
         path_imgs = list(path_img for path_img in imgs.rglob('*') if path_img.suffix in {".png", ".jpg", ".bmp", ".tif"})
