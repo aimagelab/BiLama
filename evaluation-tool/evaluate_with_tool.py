@@ -47,11 +47,14 @@ def main(gt_path, p_path):
     print(f'Average: {average}')
 
     with open(p_path / 'results.csv', 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=['id'] + list(keys))
+        writer = csv.DictWriter(csvfile, fieldnames=['path', 'id'] + list(keys))
         writer.writeheader()
         for id in sorted(results.keys()):
             results[id]['id'] = id
+            results[id]['path'] = str(p_path.stem)
             writer.writerow(results[id])
+
+    return results
 
 
 if __name__ == "__main__":
@@ -63,8 +66,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     os.environ['PATH'] = 'C:\\Program Files\\MATLAB\\MATLAB Runtime\\v90\\runtime\\win64' + ';' + os.environ['PATH']
 
+    results_all = []
     for path in args.paths:
         if not args.gt_path:
             args.gt_path = path
         print(f'Processing {path}')
-        main(Path(args.gt_path), Path(path))
+        results_all.append(main(Path(args.gt_path), Path(path)))
+
+    print(f"Saving results to 20230513_FFC_all_patch_size_stride_sweep_paper_plot.csv")
+    with open(f'20230513_all_patch_size_stride_sweep_paper_plot.csv', 'a') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=results_all[0].keys())
+        writer.writeheader()
+        writer.writerows(results_all)
+    print(f"Done! \n")
+    sys.exit()
