@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 from datetime import timedelta
 import csv
+import datetime
 
 import numpy as np
 import torch
@@ -26,6 +27,8 @@ logger = get_logger('main')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 assert torch.cuda.is_available(), 'CUDA is not available. Please use a GPU to run this code.'
+today = datetime.date.today()
+date_str = today.strftime('%Y%m%d')
 
 
 def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[256]):
@@ -38,7 +41,8 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
 
     for patch_size, stride in zip(patch_sizes, strides):
         # try:
-        save_folder = Path(f'{args.outputs_path}BiLama_binarization_results_20230508') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
+        save_folder = Path(
+            f'{args.outputs_path}BiLama_binarization_results_{date_str}') / f'{config_args.experiment_name}_ps{patch_size}_s{stride}'
         print(f'Saving results in {save_folder}')
         save_folder.mkdir(exist_ok=True, parents=True)
         tmp_config['test_stride'] = stride
@@ -67,8 +71,9 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
         #     traceback.print_exc()
         #     continue
 
-    print(f'Writing results to csv file: {args.outputs_path}20230508_patch_size_stride_sweep_{config["resume"].name}.csv')
-    with open(f'{args.outputs_path}20230508_patch_size_stride_sweep_{config["resume"].name}.csv', 'w') as csvfile:
+    out_file = f'{args.outputs_path}{date_str}_patch_size_stride_sweep_{config["resume"].name}_{Path(config["test_data_path"][0]).stem}.csv'
+    print(f'Writing results to csv file: {out_file}')
+    with open(out_file, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=data.keys())
         writer.writeheader()
         writer.writerow(data)
@@ -81,7 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--experiment_name', metavar='<name>', type=str,
                         help=f"The experiment name which will use on WandB")
     parser.add_argument('-c', '--configuration', metavar='<name>', type=str,
-                        help=f"The configuration name will use on WandB", default="base")
+                        help=f"The configuration name will use on WandB", default="base_bevagna")
     parser.add_argument('-w', '--use_wandb', type=bool, default=not DEBUG)
     parser.add_argument('-t', '--train', type=bool, default=True)
     parser.add_argument('--attention', type=str, default='none',
@@ -117,8 +122,9 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', type=float, default=0.5)
     parser.add_argument('--datasets', type=str, nargs='+', required=True)
     parser.add_argument('--test_dataset', type=str, required=True)
-    parser.add_argument('--use_specified_test_dataset', type=str, default='true', choices=['true', 'false'])
+    parser.add_argument('--use_specified_test_dataset', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--outputs_path', type=str, required=True)
+    parser.add_argument('--fast', type=str, default='false', choices=['true', 'false'])
 
     args = parser.parse_args()
 
@@ -180,7 +186,8 @@ if __name__ == '__main__':
     train_config['train_kwargs']['batch_size'] = args.batch_size
     train_config['valid_kwargs']['batch_size'] = 1
     train_config['test_kwargs']['batch_size'] = 1
-    train_config['train_transform_variant'] = args.train_transform_variant if args.train_transform_variant != 'none' else None
+    train_config[
+        'train_transform_variant'] = args.train_transform_variant if args.train_transform_variant != 'none' else None
 
     train_config['train_batch_size'] = train_config['train_kwargs']['batch_size']
     train_config['valid_batch_size'] = train_config['valid_kwargs']['batch_size']
@@ -218,14 +225,19 @@ if __name__ == '__main__':
     patches_sizes += list(range(min_patch_size, max_patch_size, offset))
     strides += list(range(min_patch_size, max_patch_size, offset))
 
+    if args.fast == 'true':
+        patches_sizes = [256, 256, 512, 512, 768, 768]
+        strides = [128, 256, 256, 512, 384, 765]
+
     if args.use_specified_test_dataset == 'true':
         datasets = {Path(dataset).name: dataset for dataset in args.datasets}
         args.test_data_path = [datasets[args.test_dataset]]
     checkpoint_path = Path(train_config['path_checkpoint'])
     results = []
+
     for i, resume_id in enumerate(args.resume_ids):
-        checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*best*.pth"))
-        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
+        checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*test*.pth"))
+        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {resume_id} in {checkpoint_path}"
         for j, checkpoint in enumerate(checkpoints):
             if not args.use_specified_test_dataset == 'true':
                 loaded_checkpoint = torch.load(checkpoint)
@@ -239,14 +251,18 @@ if __name__ == '__main__':
             print(f"---------------------------------------------------------------------\n")
             print(f"[{i}]/[{len(args.resume_ids)}]-[{j}]/[{len(checkpoints)}] -- Running {args.experiment_name} \n")
             results.append(binarize_for_competition(args, train_config, patches_sizes, strides))
-            print(f"---------------------------------------------------------------------\n")
 
-    print(f"Saving results to {args.outputs_path}20230508_all_patch_size_stride_sweep_{'_'.join(args.resume_ids)}.csv")
+    output_file = f'{args.outputs_path}{date_str}_patch_size_stride_sweep_{"_".join(args.resume_ids)}.csv'
+    if args.use_specified_test_dataset == 'true':
+        output_file = f'{args.outputs_path}{date_str}_patch_size_stride_sweep_{"_".join(args.resume_ids)}_{args.test_dataset}.csv'
+
+    print(f"Saving results to {output_file}")
     resume_ids = [str(resume_id) for resume_id in args.resume_ids]
-    with open(f'{args.outputs_path}20230508_all_patch_size_stride_sweep_{"_".join(resume_ids)}.csv', 'a') as csvfile:
+    with open(output_file, 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
+
+    print(f"---------------------------------------------------------------------\n")
     print(f"Done! \n")
     sys.exit()
-
