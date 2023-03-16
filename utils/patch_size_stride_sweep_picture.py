@@ -26,16 +26,6 @@ def parse_csv(path):
 
 def generate_picture(ffc, conv, metric='PSNR'):
 
-    # ffc_vals = [float(key_vals[1]) for i, key_vals in enumerate(ffc.items()) if i > 1]
-    # conv_vals = [float(key_vals[1]) for i, key_vals in enumerate(conv.items()) if i > 1]
-    # x = [key_vals[0].split('_')[0][2:] for i, key_vals in enumerate(ffc.items()) if i > 1]
-    # split = len(x) // 2
-    # ffc_vals_overlap = ffc_vals[:split]
-    # ffc_vals_no_overlap = ffc_vals[split:]
-    # conv_vals_overlap = conv_vals[:split]
-    # conv_vals_no_overlap = conv_vals[split:]
-    # x_axis = x[:split]
-
     patch_sizes = [ffc_val['path'].split('_')[-2][2:] for ffc_val in ffc]
     strides = [ffc_val['path'].split('_')[-1][1:] for ffc_val in ffc]
 
@@ -55,18 +45,38 @@ def generate_picture(ffc, conv, metric='PSNR'):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.legend()
-    plt.savefig(f'ffc_vs_conv_{metric}.pdf', format='pdf', dpi=1200)
+    plt.savefig(f'ffc_PHIBD_{metric}.pdf', format='pdf', dpi=1200)
     plt.show()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', type=str, required=True)
+    parser.add_argument('--all_metrics_picture', type=str, default='false', choices=['true', 'false'])
+    parser.add_argument('--ffc_checkpoint_name', type=str)
+    parser.add_argument('--conv_checkpoint_name', type=str)
     args = parser.parse_args()
     results = parse_csv(args.path)
-    results = [result for result in results if result['id'] == 'average']
-    ffc = [result for result in results if 'FFC' in result['path']]
-    conv = [result for result in results if 'CONV' in result['path']]
-    for metric in ['F-Measure', 'pseudo F-Measure (Fps)', 'PSNR', 'DRD']:
+
+    if args.all_metrics_picture == 'true':
+        results = [result for result in results if result['id'] == 'average']
+        ffc = [result for result in results if 'FFC' in result['path']]
+        conv = [result for result in results if 'CONV' in result['path']]
+        metrics = ['F-Measure', 'pseudo F-Measure (Fps)', 'PSNR', 'DRD']
+    else:
+        ffc = [d for d in results if d['checkpoint'] == args.ffc_checkpoint_name][0]
+        conv = [d for d in results if d['checkpoint'] == args.conv_checkpoint_name][0]
+        ffc_vals = [float(key_vals[1]) for i, key_vals in enumerate(ffc.items()) if i > 1]
+        conv_vals = [float(key_vals[1]) for i, key_vals in enumerate(conv.items()) if i > 1]
+        x = [key_vals[0].split('_')[0][2:] for i, key_vals in enumerate(ffc.items()) if i > 1]
+        split = len(x) // 2
+        ffc_vals_overlap = ffc_vals[:split]
+        ffc_vals_no_overlap = ffc_vals[split:]
+        conv_vals_overlap = conv_vals[:split]
+        conv_vals_no_overlap = conv_vals[split:]
+        x_axis = x[:split]
+        metrics = ['PSNR']
+
+    for metric in metrics:
         generate_picture(ffc, conv, metric)
     sys.exit()
