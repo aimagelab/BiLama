@@ -5,8 +5,11 @@ import sys
 import subprocess
 import re
 import csv
+import datetime
 
 regex = r'([ a-zA-Z()-]+)\t*:\s*(\d+\.?\d+)'
+today = datetime.date.today()
+date_str = today.strftime('%Y%m%d')
 
 
 def run_process(exe):
@@ -18,9 +21,14 @@ def main(gt_path, p_path):
     # gt_path = Path("C:\Users\\fabio\Downloads\docentrd19\gt_imgs")
     # pred_path = Path("C:\Users\\fabio\Downloads\docentrd19\DIBCO19b")
 
-    pred = {p.stem.split('_')[0]: p for p in p_path.glob('*pred*.png')}
-    gt = {p.stem.split('_')[0]: p for p in gt_path.glob('*gt*.png')}
-    assert len(pred) == len(gt) and all(k in gt for k in pred.keys())
+    if gt_path == p_path:
+        pred = {p.stem.split('_')[0]: p for p in p_path.glob('*pred*.png')}
+        gt = {p.stem.split('_')[0]: p for p in gt_path.glob('*gt*.png')}
+    else:
+        pred = {p.stem: p for p in p_path.glob('*.png')}
+        gt = {p.stem: p for p in gt_path.glob('*')}
+    assert len(pred) == len(gt) and all(k in gt for k in pred.keys()), \
+        f'Found {len(pred)} predictions and {len(gt)} ground truth images. \n--------\n{pred=}\n{gt=}\n-------\n'
 
     results = {}
 
@@ -63,18 +71,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--gt_path', type=str)
     parser.add_argument('--paths', type=str, nargs='+', required=True)
+    parser.add_argument('--out_file_name', type=str, required=True)
     args = parser.parse_args()
     os.environ['PATH'] = 'C:\\Program Files\\MATLAB\\MATLAB Runtime\\v90\\runtime\\win64' + ';' + os.environ['PATH']
 
     results_all = []
     for path in args.paths:
-        if not args.gt_path:
-            args.gt_path = path
+        gt_path = args.gt_path if args.gt_path else path
         print(f'Processing {path}')
-        results_all.append(main(Path(args.gt_path), Path(path)))
+        results_all.append(main(Path(gt_path), Path(path)))
 
-    print(f"Saving results to 20230513_FFC_all_patch_size_stride_sweep_paper_plot.csv")
-    with open(f'20230513_all_patch_size_stride_sweep_paper_plot.csv', 'a') as csvfile:
+    save_file = f'{date_str}_{args.out_file_name}.csv'
+    print(f"Saving results to {save_file}")
+    with open(save_file, 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results_all[0].keys())
         writer.writeheader()
         writer.writerows(results_all)
