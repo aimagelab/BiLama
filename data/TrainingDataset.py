@@ -12,7 +12,7 @@ from data.utils import get_path
 
 class TrainPatchSquare(Dataset):
 
-    def __init__(self, path: Path, transform=None, training_only_with_patch_square=False, load_data=True):
+    def __init__(self, path: Path, transform=None, load_data=True):
 
         super(TrainPatchSquare, self).__init__()
         self.path = Path(path)
@@ -20,16 +20,21 @@ class TrainPatchSquare(Dataset):
 
         self.full_images_paths = list(self.path.rglob('*/full/*'))
 
-        if training_only_with_patch_square:
-            self.mask_images_paths = [
-                self.path / full_image.parent.parent.stem / 'mask' / f'{full_image.stem.split("_")[0]}_mask.png'
-                for full_image in self.full_images_paths
-            ]
-        else:
-            self.mask_images_paths = [
-                self.path / full_image.parent.parent.parent.stem / full_image.parent.parent.stem / 'mask'
-                / f'{full_image.stem.split("_")[0]}_mask.png' for full_image in self.full_images_paths
-            ]
+        # if training_only_with_patch_square:
+        #     self.mask_images_paths = [
+        #         self.path / full_image.parent.parent.stem / 'mask' / f'{full_image.stem.split("_")[0]}_mask.png'
+        #         for full_image in self.full_images_paths
+        #     ]
+        # else:
+        #     self.mask_images_paths = [
+        #         self.path / full_image.parent.parent.parent.stem / full_image.parent.parent.stem / 'mask'
+        #         / f'{full_image.stem.split("_")[0]}_mask.png' for full_image in self.full_images_paths
+        #     ]
+
+        self.mask_images_paths = [
+            self.path / full_image.parent.parent.stem / 'mask' / f'{full_image.stem.split("_")[0]}_mask.png'
+            for full_image in self.full_images_paths
+        ]
 
         # self.full_images = [Image.open(image_path).convert("RGB") for image_path in self.full_images]
         # self.mask_images = [Image.open(mask_image_path).convert("L") for mask_image_path in self.mask_images]
