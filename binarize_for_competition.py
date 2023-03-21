@@ -125,6 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_specified_test_dataset', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--outputs_path', type=str, required=True)
     parser.add_argument('--fast', type=str, default='false', choices=['true', 'false'])
+    parser.add_argument('--min_patch_size', type=int, default=128)
+    parser.add_argument('--max_patch_size', type=int, default=768)
 
     args = parser.parse_args()
 
@@ -217,8 +219,8 @@ if __name__ == '__main__':
         train_config['apply_threshold_to_valid'] = False
 
     set_seed(args.seed)
-    min_patch_size = 128
-    max_patch_size = 512 + 256
+    min_patch_size = args.min_patch_size
+    max_patch_size = args.max_patch_size
     offset = 64
     patches_sizes = list(range(min_patch_size, max_patch_size, offset))
     strides = list(patch_size // 2 for patch_size in patches_sizes)
@@ -227,7 +229,7 @@ if __name__ == '__main__':
 
     if args.fast == 'true':
         patches_sizes = [256, 256, 512, 512, 768, 768]
-        strides = [128, 256, 256, 512, 384, 765]
+        strides = [128, 256, 256, 512, 384, 768]
 
     if args.use_specified_test_dataset == 'true':
         datasets = {Path(dataset).name: dataset for dataset in args.datasets}
