@@ -102,8 +102,6 @@ class LaMaTrainingModule:
             self.epoch = self.checkpoint['epoch']
             self.best_psnr = self.checkpoint['best_psnr']
             self.learning_rate = self.checkpoint['learning_rate']
-            config['learning_rate'] = self.learning_rate
-            config['lr_scheduler_warmup'] = 0
 
         self.model = self.model.to(self.device)
         self.ema_rate = config['ema_rate']
@@ -329,23 +327,21 @@ class LaMaTrainingModule:
     @torch.no_grad()
     def validation_patch_square(self):
         self.model.eval()
-
         valid_loss = 0.0
         threshold = self.config['threshold']
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_validation'], threshold=threshold)
 
-        validator = Validator(apply_threshold=self.config['apply_threshold_to_valid'], threshold=threshold)
+        for batch_idx, (valid_in, valid_out) in enumerate(self.valid_data_loader):
+            inputs, outputs = valid_in.to(self.device), valid_out.to(self.device)
 
-        for images, mask_images in self.valid_data_loader:
-            inputs, outputs = images.to(self.device), mask_images.to(self.device)
+            # self.optimizer.zero_grad()  # TODO why?
             predictions = self.model(inputs)
             loss = self.criterion(predictions, outputs)
-            predictions = torch.where(predictions > threshold, 1., 0.)
             validator.compute(predictions, outputs)
 
             valid_loss += loss.item()
 
         avg_loss = valid_loss / len(self.valid_data_loader)
         avg_metrics = validator.get_metrics()
-
         self.model.train()
         return avg_metrics, avg_loss, None
