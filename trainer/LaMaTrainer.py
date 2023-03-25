@@ -327,16 +327,17 @@ class LaMaTrainingModule:
     @torch.no_grad()
     def validation_patch_square(self):
         self.model.eval()
+
         valid_loss = 0.0
         threshold = self.config['threshold']
-        validator = Validator(apply_threshold=self.config['apply_threshold_to_validation'], threshold=threshold)
 
-        for batch_idx, (valid_in, valid_out) in enumerate(self.valid_data_loader):
-            inputs, outputs = valid_in.to(self.device), valid_out.to(self.device)
+        validator = Validator(apply_threshold=self.config['apply_threshold_to_valid'], threshold=threshold)
 
-            # self.optimizer.zero_grad()  # TODO why?
+        for images, mask_images in self.valid_data_loader:
+            inputs, outputs = images.to(self.device), mask_images.to(self.device)
             predictions = self.model(inputs)
             loss = self.criterion(predictions, outputs)
+            predictions = torch.where(predictions > threshold, 1., 0.)
             validator.compute(predictions, outputs)
 
             valid_loss += loss.item()
