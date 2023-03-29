@@ -25,7 +25,9 @@ class WarmupScheduler:
         return [params['lr'] for params in scheduler.optimizer.param_groups]
 
     def state_dict(self):
-        return self.scheduler.state_dict().update({'last_epoch': self.current_epoch})
+        state_dict = self.scheduler.state_dict()
+        state_dict.update({'last_epoch': self.current_epoch})
+        return state_dict
 
     def load_state_dict(self, state_dict):
         self.current_epoch = state_dict['last_epoch']

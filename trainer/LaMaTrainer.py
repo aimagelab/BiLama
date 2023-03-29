@@ -102,6 +102,7 @@ class LaMaTrainingModule:
             self.epoch = self.checkpoint['epoch']
             self.best_psnr = self.checkpoint['best_psnr']
             self.learning_rate = self.checkpoint['learning_rate']
+            self.load_random_settings(self.checkpoint)
 
         self.model = self.model.to(self.device)
         self.ema_rate = config['ema_rate']
@@ -142,6 +143,14 @@ class LaMaTrainingModule:
 
         # self.criterion = self.criterion.to(self.device)
 
+    def load_random_settings(self, checkpoint):
+        if 'random_settings' in checkpoint:
+            set_seed(checkpoint['random_settings']['seed'])
+            random.setstate(checkpoint['random_settings']['random_rng_state'])
+            np.random.set_state(checkpoint['random_settings']['numpy_rng_state'])
+            torch.set_rng_state(checkpoint['random_settings']['torch_rng_state'])
+            torch.cuda.set_rng_state(checkpoint['random_settings']['cuda_rng_state'])
+
     def load_checkpoints(self, folder: str, filename: str):
         checkpoints_path = f"{folder}{filename}_best_psnr.pth"
 
@@ -160,12 +169,7 @@ class LaMaTrainingModule:
             self.ema_rate = checkpoint['ema_rate']
             self.ema_parameters = model_state_dict_to_params(checkpoint['ema_parameters'], self.model)
 
-        if 'random_settings' in checkpoint:
-            set_seed(checkpoint['random_settings']['seed'])
-            random.setstate(checkpoint['random_settings']['random_rng_state'])
-            np.random.set_state(checkpoint['random_settings']['numpy_rng_state'])
-            torch.set_rng_state(checkpoint['random_settings']['torch_rng_state'])
-            torch.cuda.set_rng_state(checkpoint['random_settings']['cuda_rng_state'])
+        self.load_random_settings(checkpoint)
 
         self.logger.info(f"Loaded pretrained checkpoint model from \"{checkpoints_path}\"")
 
