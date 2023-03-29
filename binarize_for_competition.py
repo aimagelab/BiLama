@@ -8,12 +8,14 @@ from pathlib import Path
 from datetime import timedelta
 import csv
 import datetime
+from torchvision import transforms
 
 import numpy as np
 import torch
 import wandb
 import yaml
 from torchvision.transforms import functional
+from data.TestDataset import FolderDataset
 
 from trainer.LaMaTrainer import LaMaTrainingModule, set_seed
 from data.dataloaders import make_test_dataloader
@@ -49,7 +51,12 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
         tmp_config['test_patch_size'] = patch_size
         tmp_config['test_data_path'] = test_dataset_path
         trainer.config = tmp_config
-        test_dataset = make_test_dataset(tmp_config)
+        if args.eval_mode == 'true':
+            src = Path(test_dataset_path[0])
+            test_dataset = FolderDataset(src, patch_size=patch_size, overlap=True, transform=transforms.ToTensor())
+        else:
+            test_dataset = make_test_dataset(tmp_config)
+
         test_data_loader = make_test_dataloader(test_dataset, tmp_config)
         trainer.model.eval()
         validator = Validator(apply_threshold=True, threshold=0.5)
@@ -127,6 +134,7 @@ if __name__ == '__main__':
     parser.add_argument('--fast', type=str, default='false', choices=['true', 'false'])
     parser.add_argument('--min_patch_size', type=int, default=128)
     parser.add_argument('--max_patch_size', type=int, default=768)
+    parser.add_argument('--eval_mode', type=str, default='false', choices=['true', 'false'])
 
     args = parser.parse_args()
 
@@ -238,7 +246,7 @@ if __name__ == '__main__':
     results = []
 
     for i, resume_id in enumerate(args.resume_ids):
-        checkpoints = sorted(checkpoint_path.glob(f"*_{resume_id}*test*.pth"))
+        checkpoints = sorted(checkpoint_path.rglob(f"*_{resume_id}*test*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {resume_id} in {checkpoint_path}"
         for j, checkpoint in enumerate(checkpoints):
             if not args.use_specified_test_dataset == 'true':

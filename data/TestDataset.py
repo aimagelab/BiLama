@@ -92,7 +92,8 @@ class FolderDataset(TestDataset):
     def __init__(self, data_path, patch_size=256, overlap=True, transform=None):
         super(TestDataset, self).__init__()
 
-        self.imgs_path = list(Path(data_path).iterdir() if Path(data_path).is_dir() else [Path(data_path)])
+        # self.imgs_path = list(Path(data_path).iterdir() if Path(data_path).is_dir() else [Path(data_path)])
+        self.imgs_path = list(path for path in Path(data_path).rglob(f'*') if path.is_file())
         self.data_path = data_path
         self.gt_imgs_path = self.imgs_path
 
