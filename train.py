@@ -38,7 +38,7 @@ def train(config_args, config):
     if config_args.use_wandb:  # Configure WandB
         tags = [Path(path).name for path in config_args.train_data_path]
         wandb_id = wandb.util.generate_id()
-        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint:
+        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint and not config['finetune']:
             wandb_id = trainer.checkpoint['wandb_id']
         wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags,
                              dir=config_args.wandb_dir, id=wandb_id)
@@ -347,6 +347,7 @@ if __name__ == '__main__':
     parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--patch_size', type=int, default=256)
     parser.add_argument('--patch_size_raw', type=int)
+    parser.add_argument('--finetuning', type=str, default='false', choices=['true', 'false'])
 
     args = parser.parse_args()
 
@@ -359,12 +360,16 @@ if __name__ == '__main__':
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
 
+    train_config['finetuning'] = args.finetuning == 'true'
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
         checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
         args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
+
+        if train_config['finetuning']:
+            args.experiment_name = f'{args.experiment_name}_finetuning_{str(uuid.uuid4())[:4]}'
 
     if args.experiment_name is None:
         exp_name = [
