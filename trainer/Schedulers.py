@@ -7,7 +7,8 @@ class WarmupScheduler:
         self.scheduler = scheduler
         self.warmup = warmup
         self.lr_min = lr_min
-        self.warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(scheduler.optimizer, lambda epoch: min(epoch / warmup, 1))
+        self.warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(scheduler.optimizer,
+                                                                  lambda epoch: min(epoch / warmup, 1))
         self.current_epoch = 0
 
     def step(self, metrics=None):
@@ -31,7 +32,8 @@ class WarmupScheduler:
 
     def load_state_dict(self, state_dict):
         self.current_epoch = state_dict['last_epoch']
-        return self.scheduler.load_state_dict(state_dict)
+        self.scheduler.load_state_dict(state_dict)
+
 
 def make_lr_scheduler(kind, optimizer, kwargs, warmup, config):
     lr = config['learning_rate']

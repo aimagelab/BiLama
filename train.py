@@ -38,7 +38,7 @@ def train(config_args, config):
     if config_args.use_wandb:  # Configure WandB
         tags = [Path(path).name for path in config_args.train_data_path]
         wandb_id = wandb.util.generate_id()
-        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint and not config['finetune']:
+        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint and not config['finetuning']:
             wandb_id = trainer.checkpoint['wandb_id']
         wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags,
                              dir=config_args.wandb_dir, id=wandb_id)
