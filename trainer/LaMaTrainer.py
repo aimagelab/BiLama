@@ -100,7 +100,7 @@ class LaMaTrainingModule:
 
         if self.checkpoint is not None:
             self.model.load_state_dict(self.checkpoint['model'], strict=True)
-            self.epoch = self.checkpoint['epoch'] if not config['finetuning'] else self.epoch
+            self.epoch = self.checkpoint['epoch'] + 1 if not config['finetuning'] else self.epoch
             self.best_psnr = self.checkpoint['best_psnr']
             self.learning_rate = self.checkpoint['learning_rate']
             # self.load_random_settings(self.checkpoint)
