@@ -27,11 +27,12 @@ class WarmupScheduler:
 
     def state_dict(self):
         state_dict = self.scheduler.state_dict()
-        state_dict.update({'last_epoch': self.current_epoch})
+        state_dict['last_epoch_with_warmup'] = self.current_epoch
         return state_dict
 
     def load_state_dict(self, state_dict):
-        self.current_epoch = state_dict['last_epoch']
+        self.current_epoch = state_dict['last_epoch_with_warmup']
+        state_dict.pop('last_epoch_with_warmup')
         self.scheduler.load_state_dict(state_dict)
 
 
@@ -39,6 +40,10 @@ def make_lr_scheduler(kind, optimizer, kwargs, warmup, config):
     lr = config['learning_rate']
     lr_min = config['learning_rate_min']
     epochs = config['num_epochs']
+
+    if warmup > 0:
+        epochs = epochs - warmup
+
     if kind == 'constant':
         lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1., total_iters=1)
     elif kind == 'exponential':

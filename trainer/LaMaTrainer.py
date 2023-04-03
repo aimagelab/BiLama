@@ -118,7 +118,6 @@ class LaMaTrainingModule:
         self.optimizer = make_optimizer(self.model, self.learning_rate, config['kind_optimizer'], config['optimizer'])
         self.lr_scheduler = make_lr_scheduler(config['lr_scheduler'], self.optimizer, config['lr_scheduler_kwargs'],
                                               config['lr_scheduler_warmup'], config)
-        self.lr_scheduler.state_dict()
         self.criterion = make_criterion(losses=config['losses'])
 
         # Validation
@@ -187,7 +186,7 @@ class LaMaTrainingModule:
         checkpoint = {
             'model': model_state_dict,
             'optimizer': self.optimizer.state_dict(),
-            'epoch': self.epoch + 1,
+            'epoch': self.epoch,
             'best_psnr': self.best_psnr,
             'learning_rate': self.learning_rate,
             'config': self.config,

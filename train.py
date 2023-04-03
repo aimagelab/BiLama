@@ -256,8 +256,6 @@ def train(config_args, config):
                         #              names=names, images=predicted_images)
                     else:
                         patience -= 1
-                    logger.info(f"Saving model...")
-                    trainer.save_checkpoints(filename=config_args.experiment_name)
 
                 ##########################################
                 #                 Generic                #
@@ -283,6 +281,9 @@ def train(config_args, config):
 
                 if wandb_log:
                     wandb_log.on_log(wandb_logs)
+
+                logger.info(f"Saving model...")
+                trainer.save_checkpoints(filename=config_args.experiment_name)
 
                 if patience == 0:
                     stdout = f"There has been no update of Best PSNR value in the last {config['patience']} epochs."
