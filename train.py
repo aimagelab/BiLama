@@ -54,12 +54,13 @@ def train(config_args, config):
 
     try:
         start_time = time.time()
-
         patience = config['patience']
 
-        for epoch in range(1, config['num_epochs']):
+        for epoch in range(trainer.epoch, config['num_epochs']):
             wandb_logs = dict()
             wandb_logs['lr'] = trainer.optimizer.param_groups[0]['lr']
+            trainer.epoch = epoch
+
             if config_args.train:
                 logger.info("Training has been started") if epoch == 1 else None
                 logger.info(f"Epoch {trainer.epoch} of {trainer.num_epochs}")
@@ -68,13 +69,12 @@ def train(config_args, config):
                 # visualization = torch.zeros((1, config['train_patch_size'], config['train_patch_size']), device=device)
 
                 trainer.model.train()
-
                 train_validator.reset()
                 data_times = []
                 train_times = []
-
                 start_data_time = time.time()
                 start_epoch_time = time.time()
+
                 for batch_idx, (train_in, train_out) in enumerate(trainer.train_data_loader):
                     data_times.append(time.time() - start_data_time)
                     start_train_time = time.time()
@@ -261,7 +261,6 @@ def train(config_args, config):
                 #                 Generic                #
                 ##########################################
 
-                trainer.epoch += 1
                 wandb_logs['epoch'] = trainer.epoch
                 wandb_logs['epoch_time'] = time.time() - start_epoch_time
 
@@ -272,7 +271,6 @@ def train(config_args, config):
                 stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_metrics['psnr']:.4f}"
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
-                logger.info('-' * 75)
 
                 if config['lr_scheduler'] == 'plateau':
                     trainer.lr_scheduler.step(metrics=psnr_running_mean)
@@ -284,6 +282,7 @@ def train(config_args, config):
 
                 logger.info(f"Saving model...")
                 trainer.save_checkpoints(filename=config_args.experiment_name)
+                logger.info('-' * 75)
 
                 if patience == 0:
                     stdout = f"There has been no update of Best PSNR value in the last {config['patience']} epochs."
@@ -298,7 +297,7 @@ def train(config_args, config):
         logger.error(f"Training failed due to {e}")
     finally:
         logger.info("Training finished")
-        exit()
+        sys.exit()
 
 
 if __name__ == '__main__':
