@@ -45,13 +45,13 @@ def main():
               'skip_connections': 'cat',
               'unet_layers': 2, 'n_blocks': 3, 'n_downsampling': 3, 'cross_attention': 'none', 'losses': ['CHAR'],
               'lr_scheduler': 'cosine',
-              'lr_scheduler_kwargs': {}, 'lr_scheduler_warmup': 10, 'learning_rate_min': 1.5e-05, 'seed': 742,
+              'lr_scheduler_kwargs': {}, 'lr_scheduler_warmup': 2, 'learning_rate_min': 1.5e-05, 'seed': 742,
               'valid_data_path': ['/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO16'],
               'train_data_path': ['/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO09'],
               'test_data_path': ['/mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO17'],
               'aux_data_path': [], 'merge_image': False,
               'cross_attention_args': {'num_heads': 4, 'attention_channel_scale_factor': 1},
-              'train_batch_size': 2, 'valid_batch_size': 1, 'test_batch_size': 1, 'num_epochs': 50, 'patience': 60,
+              'train_batch_size': 2, 'valid_batch_size': 1, 'test_batch_size': 1, 'num_epochs': 20, 'patience': 60,
               'ema_rate': None,
               'apply_threshold_to_train': False, 'apply_threshold_to_valid': False, 'apply_threshold_to_test': True,
               'load_data': True,
@@ -76,15 +76,15 @@ def main():
     num_epochs = config['num_epochs']
 
     lrs = []
-    stop_point = 20
+    stop_point = 10
     for i in range(num_epochs):
         lr_scheduler.step()
         lrs.append(lr_scheduler.get_lr()[0])
         if i == stop_point-1:
             break
     print(lrs)
-    plt.plot(np.arange(stop_point), lrs)
-    plt.show()
+    # plt.plot(np.arange(stop_point), lrs)
+    # plt.show()
 
     torch.save(i, 'epoch.pth')
     torch.save(optimizer.state_dict(), 'optimizer.pth')
@@ -112,7 +112,10 @@ def main():
         lrs.append(lr_scheduler.get_lr()[0])
     print(lrs)
     print(len(lrs))
-    plt.plot(np.arange(num_epochs), lrs)
+    lrs.pop(-1)
+    print(len(lrs))
+    print(num_epochs-1)
+    plt.plot(np.arange(num_epochs-1), lrs)
     plt.show()
 
     print(lrs[-1])

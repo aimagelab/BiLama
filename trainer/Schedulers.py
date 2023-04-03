@@ -42,7 +42,7 @@ def make_lr_scheduler(kind, optimizer, kwargs, warmup, config):
     epochs = config['num_epochs']
 
     if warmup > 0:
-        epochs = epochs - warmup
+        epochs = epochs - warmup - 1
 
     if kind == 'constant':
         lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1., total_iters=1)
