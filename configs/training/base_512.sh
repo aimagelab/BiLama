@@ -3,7 +3,7 @@
 #SBATCH --partition=prod
 #SBATCH -e /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_512_%j.err
 #SBATCH -o /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/jobs/bilama_512_%j.out
-#SBATCH --mem=24G
+#SBATCH --mem=48G
 #SBATCH --exclude=aimagelab-srv-00,aimagelab-srv-10,vegeta,carabbaggio,germano,gervasoni,pippobaudo,rezzonico,ajeje,helmut,lurcanio
 #SBATCH -J bilama_abla
 
