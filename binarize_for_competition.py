@@ -34,6 +34,7 @@ date_str = today.strftime('%Y%m%d')
 
 
 def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[256]):
+    load_data = config['load_data']
     trainer = LaMaTrainingModule(config, device=device, make_loaders=False)
     trainer.config['train_batch_size'] = config_args.batch_size
     test_dataset_path = config['test_data_path']
@@ -53,7 +54,11 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
         trainer.config = tmp_config
         if args.eval_mode == 'true':
             src = Path(test_dataset_path[0])
-            test_dataset = FolderDataset(src, patch_size=patch_size, overlap=True, transform=transforms.ToTensor())
+            test_dataset = FolderDataset(src,
+                                         patch_size=patch_size,
+                                         overlap=True,
+                                         transform=transforms.ToTensor(),
+                                         load_data=load_data)
         else:
             test_dataset = make_test_dataset(tmp_config)
 
