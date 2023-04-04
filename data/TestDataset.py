@@ -31,7 +31,7 @@ class TestDataset(Dataset):
             for img_path in self.imgs]
 
         self.load_data = load_data
-        self.imgs_paths = self.imgs
+        self.imgs_path = self.imgs
         self.gt_imgs_path = self.gt_imgs
         if self.load_data:
             self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
@@ -101,7 +101,7 @@ class FolderDataset(TestDataset):
         self.data_path = data_path
         self.gt_imgs = self.imgs
 
-        self.imgs_paths = self.imgs
+        self.imgs_path = self.imgs
         self.gt_imgs_path = self.gt_imgs
         if load_data:
             self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
