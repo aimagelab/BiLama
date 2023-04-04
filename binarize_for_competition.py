@@ -65,9 +65,9 @@ def binarize_for_competition(config_args, config, patch_sizes=[256], strides=[25
                 image_name = item['image_name'][0]
                 test_loss_item, validator, images_item = trainer.eval_item(item, validator, 0.5)
 
-                images_item[image_name][0].save(Path(save_folder, f"{i:02d}_test_img.png"))
-                images_item[image_name][1].save(Path(save_folder, f"{i:02d}_pred_img.png"))
-                images_item[image_name][2].save(Path(save_folder, f"{i:02d}_gt_test_img.png"))
+                images_item[image_name][0].save(Path(save_folder, f"{Path(image_name).stem}_test_img.png"))
+                images_item[image_name][1].save(Path(save_folder, f"{Path(image_name).stem}_pred_img.png"))
+                images_item[image_name][2].save(Path(save_folder, f"{Path(image_name).stem}_gt_test_img.png"))
 
         avg_metrics = validator.get_metrics()
         data[f'PS{patch_size}_S{stride}'] = avg_metrics['psnr']
@@ -135,6 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_patch_size', type=int, default=128)
     parser.add_argument('--max_patch_size', type=int, default=768)
     parser.add_argument('--eval_mode', type=str, default='false', choices=['true', 'false'])
+    parser.add_argument('--finetuning', type=str, default='false', choices=['true', 'false'])
 
     args = parser.parse_args()
 
@@ -182,6 +183,7 @@ if __name__ == '__main__':
     train_config['train_data_path'] = args.train_data_path
     train_config['valid_data_path'] = args.train_data_path
     train_config['merge_image'] = args.merge_image == 'true'
+    train_config['finetuning'] = args.finetuning == 'true'
 
     if args.attention_num_heads and args.attention_channel_scale_factor:
         train_config['cross_attention_args'] = {
