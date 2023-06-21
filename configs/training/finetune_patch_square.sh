@@ -12,7 +12,7 @@ scontrol update JobID="$SLURM_JOB_ID" name="@{name}"
 srun /homes/$(whoami)/.conda/envs/LaMa/bin/python /mnt/beegfs/work/FoMo_AIISDH/vpippi/BiLama/train.py -c base \
   --n_blocks @{n_blocks|3} --operation @{operation|ffc} --attention none --num_workers 2 --epochs 500 --skip cat \
   --unet_layers @{unet_layers|2} --lr_scheduler cosine --lr 1.5e-5 --lr_min 1.5e-6 --lr_scheduler_kwargs "dict()" --resume @{resume|none} --ema_rate -1 \
-  --loss @{loss|CHAR} --merge_image false --train_transform_variant latin --lr_scheduler_warmup 10 \
+  --loss @{loss|CHAR} --merge_image false --train_transform_variant latin --finetuning true --lr_scheduler_warmup 10 \
   --patch_size 256 --patch_size_raw 384 --batch_size 4 --datasets \
     /mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO09 \
     /mnt/beegfs/scratch/fquattrini/binarization_datasets_one_for_eval/DIBCO10 \

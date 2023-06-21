@@ -38,7 +38,7 @@ def train(config_args, config):
     if config_args.use_wandb:  # Configure WandB
         tags = [Path(path).name for path in config_args.train_data_path]
         wandb_id = wandb.util.generate_id()
-        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint:
+        if trainer.checkpoint is not None and 'wandb_id' in trainer.checkpoint and not config['finetuning']:
             wandb_id = trainer.checkpoint['wandb_id']
         wandb_log = WandbLog(experiment_name=config_args.experiment_name, tags=tags,
                              dir=config_args.wandb_dir, id=wandb_id)
@@ -54,12 +54,13 @@ def train(config_args, config):
 
     try:
         start_time = time.time()
-
         patience = config['patience']
 
-        for epoch in range(1, config['num_epochs']):
+        for epoch in range(trainer.epoch, config['num_epochs']):
             wandb_logs = dict()
             wandb_logs['lr'] = trainer.optimizer.param_groups[0]['lr']
+            trainer.epoch = epoch
+
             if config_args.train:
                 logger.info("Training has been started") if epoch == 1 else None
                 logger.info(f"Epoch {trainer.epoch} of {trainer.num_epochs}")
@@ -68,13 +69,12 @@ def train(config_args, config):
                 # visualization = torch.zeros((1, config['train_patch_size'], config['train_patch_size']), device=device)
 
                 trainer.model.train()
-
                 train_validator.reset()
                 data_times = []
                 train_times = []
-
                 start_data_time = time.time()
                 start_epoch_time = time.time()
+
                 for batch_idx, (train_in, train_out) in enumerate(trainer.train_data_loader):
                     data_times.append(time.time() - start_data_time)
                     start_train_time = time.time()
@@ -256,14 +256,11 @@ def train(config_args, config):
                         #              names=names, images=predicted_images)
                     else:
                         patience -= 1
-                    logger.info(f"Saving model...")
-                    trainer.save_checkpoints(filename=config_args.experiment_name)
 
                 ##########################################
                 #                 Generic                #
                 ##########################################
 
-                trainer.epoch += 1
                 wandb_logs['epoch'] = trainer.epoch
                 wandb_logs['epoch_time'] = time.time() - start_epoch_time
 
@@ -274,7 +271,6 @@ def train(config_args, config):
                 stdout = f"Test Loss: {test_loss:.4f} - PSNR: {test_metrics['psnr']:.4f}"
                 stdout += f" Best Loss: {trainer.best_psnr:.3f}"
                 logger.info(stdout)
-                logger.info('-' * 75)
 
                 if config['lr_scheduler'] == 'plateau':
                     trainer.lr_scheduler.step(metrics=psnr_running_mean)
@@ -283,6 +279,10 @@ def train(config_args, config):
 
                 if wandb_log:
                     wandb_log.on_log(wandb_logs)
+
+                logger.info(f"Saving model...")
+                trainer.save_checkpoints(filename=config_args.experiment_name)
+                logger.info('-' * 75)
 
                 if patience == 0:
                     stdout = f"There has been no update of Best PSNR value in the last {config['patience']} epochs."
@@ -297,7 +297,7 @@ def train(config_args, config):
         logger.error(f"Training failed due to {e}")
     finally:
         logger.info("Training finished")
-        exit()
+        sys.exit()
 
 
 if __name__ == '__main__':
@@ -347,6 +347,7 @@ if __name__ == '__main__':
     parser.add_argument('--aux_datasets', type=str, nargs='+', default=[])
     parser.add_argument('--patch_size', type=int, default=256)
     parser.add_argument('--patch_size_raw', type=int)
+    parser.add_argument('--finetuning', type=str, default='false', choices=['true', 'false'])
 
     args = parser.parse_args()
 
@@ -359,12 +360,16 @@ if __name__ == '__main__':
     with open(configuration_path) as file:
         train_config = yaml.load(file, Loader=yaml.Loader)
 
+    train_config['finetuning'] = args.finetuning == 'true'
     if args.resume != 'none':
         checkpoint_path = Path(train_config['path_checkpoint'])
         checkpoints = sorted(checkpoint_path.glob(f"*_{args.resume}*.pth"))
         assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {args.resume}"
         train_config['resume'] = checkpoints[0]
         args.experiment_name = checkpoints[0].stem.rstrip('_best_psnr')
+
+        if train_config['finetuning']:
+            args.experiment_name = f'{args.experiment_name}_finetuning_{str(uuid.uuid4())[:4]}'
 
     if args.experiment_name is None:
         exp_name = [

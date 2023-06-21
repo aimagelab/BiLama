@@ -19,20 +19,23 @@ class TestDataset(Dataset):
 
         self.is_validation = is_validation
         if is_validation:
-            self.imgs_path = list(Path(data_path).rglob(f'imgs/*'))
+            self.imgs = list(Path(data_path).rglob(f'imgs/*'))
         else:
-            self.imgs_path = list(Path(data_path).rglob(f'*/imgs/*'))
+            self.imgs = list(Path(data_path).rglob(f'*/imgs/*'))
+
         self.data_path = data_path
-        self.gt_imgs_path = [
+        self.gt_imgs = [
             img_path.parent.parent / 'gt_imgs' / img_path.name if
             (img_path.parent.parent / 'gt_imgs' / img_path.name).exists() else
             img_path.parent.parent / 'gt_imgs' / (img_path.stem + '.png')
-            for img_path in self.imgs_path]
+            for img_path in self.imgs]
 
         self.load_data = load_data
+        self.imgs_path = self.imgs
+        self.gt_imgs_path = self.gt_imgs
         if self.load_data:
-            self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs_path]
-            self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs_path]
+            self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
+            self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
 
         self.patch_size = patch_size
         self.stride = stride
@@ -46,8 +49,8 @@ class TestDataset(Dataset):
             sample = self.imgs[index]
             gt_sample = self.gt_imgs[index]
         else:
-            sample = Image.open(self.imgs_path[index]).convert("RGB")
-            gt_sample = Image.open(self.gt_imgs_path[index]).convert("L")
+            sample = Image.open(self.imgs[index]).convert("RGB")
+            gt_sample = Image.open(self.gt_imgs[index]).convert("L")
 
         # Create patches OLD
         # padding_width = ((sample.width // self.patch_size) + 1) * self.patch_size
@@ -88,18 +91,23 @@ class TestDataset(Dataset):
 
         return item
 
+
 class FolderDataset(TestDataset):
-    def __init__(self, data_path, patch_size=256, overlap=True, transform=None):
+    def __init__(self, data_path, patch_size=256, overlap=True, transform=None, load_data=True):
         super(TestDataset, self).__init__()
 
-        self.imgs_path = list(Path(data_path).iterdir() if Path(data_path).is_dir() else [Path(data_path)])
+        # self.imgs_path = list(Path(data_path).iterdir() if Path(data_path).is_dir() else [Path(data_path)])
+        self.imgs = list(path for path in Path(data_path).rglob(f'*') if path.is_file())
         self.data_path = data_path
-        self.gt_imgs_path = self.imgs_path
+        self.gt_imgs = self.imgs
 
-        self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs_path]
-        self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs_path]
+        self.imgs_path = self.imgs
+        self.gt_imgs_path = self.gt_imgs
+        if load_data:
+            self.imgs = [Image.open(img_path).convert("RGB") for img_path in self.imgs]
+            self.gt_imgs = [Image.open(gt_img_path).convert("L") for gt_img_path in self.gt_imgs]
 
         self.patch_size = patch_size
         self.stride = patch_size // 2 if overlap else patch_size
         self.transform = transform
-        self.load_data = True
+        self.load_data = load_data

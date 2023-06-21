@@ -7,7 +7,8 @@ class WarmupScheduler:
         self.scheduler = scheduler
         self.warmup = warmup
         self.lr_min = lr_min
-        self.warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(scheduler.optimizer, lambda epoch: min(epoch / warmup, 1))
+        self.warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(scheduler.optimizer,
+                                                                  lambda epoch: min(epoch / warmup, 1))
         self.current_epoch = 0
 
     def step(self, metrics=None):
@@ -25,16 +26,24 @@ class WarmupScheduler:
         return [params['lr'] for params in scheduler.optimizer.param_groups]
 
     def state_dict(self):
-        return self.scheduler.state_dict().update({'last_epoch': self.current_epoch})
+        state_dict = self.scheduler.state_dict()
+        state_dict['last_epoch_with_warmup'] = self.current_epoch
+        return state_dict
 
     def load_state_dict(self, state_dict):
-        self.current_epoch = state_dict['last_epoch']
-        return self.scheduler.load_state_dict(state_dict)
+        self.current_epoch = state_dict['last_epoch_with_warmup']
+        state_dict.pop('last_epoch_with_warmup')
+        self.scheduler.load_state_dict(state_dict)
+
 
 def make_lr_scheduler(kind, optimizer, kwargs, warmup, config):
     lr = config['learning_rate']
     lr_min = config['learning_rate_min']
     epochs = config['num_epochs']
+
+    if warmup > 0:
+        epochs = epochs - warmup - 1
+
     if kind == 'constant':
         lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1., total_iters=1)
     elif kind == 'exponential':
