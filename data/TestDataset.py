@@ -6,6 +6,9 @@ from torch.utils.data import Dataset
 import math
 
 from data.utils import get_path
+from utils.htr_logging import get_logger
+
+logger = get_logger(__file__)
 
 
 class TestPatchSquare(Dataset):
@@ -18,7 +21,8 @@ class TestDataset(Dataset):
         super(TestDataset, self).__init__()
 
         mobile_dataset = False
-        if 'mobile_dataset' in str(data_path):
+        if 'mobile-dataset' in str(data_path):
+            logger.info(f"Mobile dataset detected")
             mobile_dataset = True
 
         self.is_validation = is_validation
