@@ -17,6 +17,10 @@ class TestDataset(Dataset):
     def __init__(self, data_path, patch_size=256, stride=256, transform=None, is_validation=False, load_data=True):
         super(TestDataset, self).__init__()
 
+        mobile_dataset = False
+        if 'mobile_dataset' in str(data_path):
+            mobile_dataset = True
+
         self.is_validation = is_validation
         if is_validation:
             self.imgs = list(Path(data_path).rglob(f'imgs/*'))
@@ -24,11 +28,21 @@ class TestDataset(Dataset):
             self.imgs = list(Path(data_path).rglob(f'*/imgs/*'))
 
         self.data_path = data_path
-        self.gt_imgs = [
-            img_path.parent.parent / 'gt_imgs' / img_path.name if
-            (img_path.parent.parent / 'gt_imgs' / img_path.name).exists() else
-            img_path.parent.parent / 'gt_imgs' / (img_path.stem + '.png')
-            for img_path in self.imgs]
+
+        if mobile_dataset:
+            self.gt_imgs = []
+            gt_imgs = list(Path(data_path).rglob(f'*/gt_imgs/*'))
+            print(f"GT imgs: {len(gt_imgs)}")
+            for img_path in self.imgs:
+                gt_img = [gt_img for gt_img in gt_imgs if gt_img.stem in img_path.stem][0]
+                self.gt_imgs.append(gt_img)
+
+        else:
+            self.gt_imgs = [
+                img_path.parent.parent / 'gt_imgs' / img_path.name if
+                (img_path.parent.parent / 'gt_imgs' / img_path.name).exists() else
+                img_path.parent.parent / 'gt_imgs' / (img_path.stem + '.png')
+                for img_path in self.imgs]
 
         self.load_data = load_data
         self.imgs_path = self.imgs

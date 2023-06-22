@@ -26,7 +26,6 @@ srun /homes/$(whoami)/.conda/envs/LaMa/bin/python /mnt/beegfs/work/FoMo_AIISDH/v
     /mnt/beegfs/scratch/fquattrini/binarization_datasets/Nabuco \
     /mnt/beegfs/scratch/fquattrini/doceng/livememory-dataset-1 \
     /mnt/beegfs/scratch/fquattrini/doceng/livememory-dataset-2 \
-    /mnt/beegfs/scratch/fquattrini/doceng/mobile-dataset-3 \
-    /mnt/beegfs/scratch/fquattrini/doceng/mobile-dataset-4 \
-    --test_dataset @{test|DIBCO17} \
-    --validation_dataset @{valid|DIBCO16}
+    /mnt/beegfs/scratch/fquattrini/doceng/mobile-dataset \
+    --test_dataset @{test|mobile-dataset} \
+    --validation_dataset @{valid|mobile-dataset}
