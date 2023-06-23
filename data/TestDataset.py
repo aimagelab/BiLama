@@ -22,21 +22,22 @@ class TestDataset(Dataset):
 
         mobile_dataset = False
         if 'mobile-dataset' in str(data_path):
-            logger.info(f"Mobile dataset detected")
+            logger.info(f"Mobile dataset detected. Path {data_path}")
             mobile_dataset = True
 
         self.is_validation = is_validation
         if is_validation:
             self.imgs = list(Path(data_path).rglob(f'imgs/*'))
+            gt_imgs = list(Path(data_path).rglob(f'gt_imgs/*'))
         else:
             self.imgs = list(Path(data_path).rglob(f'*/imgs/*'))
+            gt_imgs = list(Path(data_path).rglob(f'*/gt_imgs/*'))
 
         self.data_path = data_path
 
         if mobile_dataset:
             self.gt_imgs = []
-            gt_imgs = list(Path(data_path).rglob(f'*/gt_imgs/*'))
-            print(f"GT imgs: {len(gt_imgs)}")
+            logger.info(f"GT imgs: {len(gt_imgs)}")
             for img_path in self.imgs:
                 gt_img = [gt_img for gt_img in gt_imgs if gt_img.stem in img_path.stem][0]
                 self.gt_imgs.append(gt_img)
