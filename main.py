@@ -29,7 +29,7 @@ if __name__ == '__main__':
     path_config = os.path.join(root_dir, 'configs/create_patches.yaml')
     args = configure_args(path_config)
     datasets = [
-        '/mnt/beegfs/scratch/fquattrini/doceng/mobile-dataset-3/',
+        '/home/shared/datasets/DIBCO18/',
     ]
     for dataset in datasets:
         args.path_destination = dataset

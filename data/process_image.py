@@ -43,7 +43,7 @@ class PatchImage:
         logging.info("Configuration folders ...")
 
     def create_patches(self, root_original: str, root_ground_truth: str, test_dataset, validation_dataset):
-        mobile_dataset = True
+        mobile_dataset = False
         logging.info("Start process ...")
         root_original = Path(root_original)
         gt = root_original / 'test' / 'gt_imgs'
@@ -58,7 +58,7 @@ class PatchImage:
             or_img = cv2.imread(str(img))
 
             if not mobile_dataset:
-                gt_img = gt / img.name
+                gt_img = gt / f'{img.stem}_gt.bmp'
                 gt_img = gt_img if gt_img.exists() else gt / (img.stem + '.png')
             else:
                 gt_img = [gt_img_c for gt_img_c in gt_imgs if gt_img_c.stem in img.stem][0]

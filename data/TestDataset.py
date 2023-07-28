@@ -44,8 +44,8 @@ class TestDataset(Dataset):
 
         else:
             self.gt_imgs = [
-                img_path.parent.parent / 'gt_imgs' / img_path.name if
-                (img_path.parent.parent / 'gt_imgs' / img_path.name).exists() else
+                img_path.parent.parent / 'gt_imgs' / f'{img_path.stem}_gt.bmp' if
+                (img_path.parent.parent / 'gt_imgs' / f'{img_path.stem}_gt.bmp').exists() else
                 img_path.parent.parent / 'gt_imgs' / (img_path.stem + '.png')
                 for img_path in self.imgs]
 

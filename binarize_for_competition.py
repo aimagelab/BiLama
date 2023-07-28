@@ -105,7 +105,7 @@ if __name__ == '__main__':
                         choices=['none', 'cross', 'self', 'cross_local', 'cross_global'])
     parser.add_argument('--attention_num_heads', type=int, default=4)
     parser.add_argument('--attention_channel_scale_factor', type=int, default=1)
-    parser.add_argument('--n_blocks', type=int, default=9)
+    parser.add_argument('--n_blocks', type=int, default=3)
     parser.add_argument('--n_downsampling', type=int, default=3)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=4)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--skip', type=str, default='none', choices=['none', 'add', 'cat'])
     parser.add_argument('--resume_ids', type=str, nargs='+', required=True)
     parser.add_argument('--wandb_dir', type=str, default='/tmp')
-    parser.add_argument('--unet_layers', type=int, default=0)
+    parser.add_argument('--unet_layers', type=int, default=2)
     parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--seed', type=int, default=742)
     parser.add_argument('--patience', type=int, default=60)
@@ -253,8 +253,14 @@ if __name__ == '__main__':
     results = []
 
     for i, resume_id in enumerate(args.resume_ids):
-        checkpoints = sorted(checkpoint_path.rglob(f"*_{resume_id}*test*.pth"))
-        assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {resume_id} in {checkpoint_path}"
+        # checkpoints = sorted(checkpoint_path.rglob(f"*_{resume_id}*test*.pth"))
+        # checkpoints = [Path(r'/home/shared/revised_conv_iccv.pth')]
+        checkpoints = [
+            Path(r'/home/shared/fourbicheckpoints/1b38_conv_new.pth'),
+            Path(r'/home/shared/fourbicheckpoints/c6a6_conv_new.pth'),
+        ]
+
+        # assert len(checkpoints) > 0, f"Found {len(checkpoints)} checkpoints with uuid {resume_id} in {checkpoint_path}"
         for j, checkpoint in enumerate(checkpoints):
             if not args.use_specified_test_dataset == 'true':
                 loaded_checkpoint = torch.load(checkpoint)

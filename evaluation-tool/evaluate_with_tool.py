@@ -81,7 +81,8 @@ if __name__ == "__main__":
         print(f'Processing {path}')
         results_all.append(main(Path(gt_path), Path(path)))
 
-    save_file = f'{date_str}_{args.out_file_name}.csv'
+    base_save_dir = Path(r'C:\Users\fabio\Downloads\binarization_0728')
+    save_file = base_save_dir / f'{date_str}_{args.out_file_name}.csv'
     print(f"Saving results to {save_file}")
     with open(save_file, 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results_all[0].keys())
